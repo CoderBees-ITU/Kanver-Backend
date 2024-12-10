@@ -9,13 +9,13 @@ DROP TABLE IF EXISTS User;
 CREATE TABLE User (
     TC_ID              BIGINT PRIMARY KEY,
     Location           VARCHAR(255),
-    Age                INT,
-    Email              VARCHAR(255),
-    Phone_Number       VARCHAR(50),
+    Birth_Date         DATE NOT NULL,
+    Name               VARCHAR(255) NOT NULL,
+    Surname            VARCHAR(255) NOT NULL,
+    Email              VARCHAR(255) NOT NULL,
     Blood_Type         VARCHAR(10),
     Last_Donation_Date DATE,
     Is_Eligible        BOOLEAN,
-    Gender             VARCHAR(10)
 );
 
 -- Create Banned_Users table (1:1 with User)
@@ -43,7 +43,6 @@ CREATE TABLE Requests (
     Status           VARCHAR(50),
     Create_Time      DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (Requested_TC_ID) REFERENCES User(TC_ID) ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (Patient_TC_ID) REFERENCES User(TC_ID) ON DELETE SET NULL ON UPDATE CASCADE
 );
 
 -- Create On_The_Way table
