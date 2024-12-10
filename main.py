@@ -5,6 +5,7 @@ import secrets
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
 from flask_cors import CORS
+from auth import register
 
 app = Flask(__name__)
 CORS(app, support_credentials=True)
@@ -29,38 +30,9 @@ def hello_world():
     return jsonify({"message": "Hello, World!"})
 
 @app.route("/register", methods=["POST"])
-def register():
-    data = request.get_json()
-    try:
-        email = data["email"]
-        password = data["password"]
-        name = data["name"]
+def registerC():
+    return register()
 
-        # Create a user using Firebase Admin
-        user_record = auth.create_user(
-            email=email,
-            password=password,
-            display_name=name
-        )
-
-
-        # Create a server-side session
-        session['user_id'] = user_record.uid
-        session['email'] = email
-        session['logged_in'] = True
-
-        # Generate a session key to return to the client
-        session_key = secrets.token_hex(16)
-        session['session_key'] = session_key
-
-        return jsonify({
-            "message": "User created successfully",
-            "user_id": user_record.uid,
-            "session_key": session_key
-        }), 200
-
-    except Exception as e:
-        return jsonify({"message": str(e)}), 400
 
 @app.route("/check-auth", methods=["POST"])
 def check_auth():
