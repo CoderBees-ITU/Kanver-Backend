@@ -14,7 +14,7 @@ def create_user():
         return jsonify({"message": "No input data provided"}), 400
 
     # Required fields based on the SQL table structure
-    required_fields = ["tc_id", "birth_date", "name", "surname", "email"]
+    required_fields = ["tc_id", "birth_date", "name", "surname", "email", "blood_type",]
     for field in required_fields:
         if field not in data:
             return jsonify({"message": f"Missing field: {field}"}), 400
@@ -57,4 +57,35 @@ def create_user():
     finally:
         cursor.close()
 
+
+
+@user_bp.route("/get_user/<int:tc>", methods=["GET"])
+def get_user(tc):
+    try:
+        connection = mysql.connector.connect(
+            host=db_host,
+            user=db_user,
+            password=db_password,
+            database=db_name,
+            auth_plugin='mysql_native_password'
+        )
+        cursor = connection.cursor(dictionary=True)
+
+        # SQL Query to get a user by TC_ID
+        select_query = """
+            SELECT * FROM User WHERE TC_ID = %s
+        """
+        cursor.execute(select_query, (tc,))
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        return jsonify(user), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"message": f"Database error: {err}"}), 500
+
+    finally:
+        cursor.close()
 
