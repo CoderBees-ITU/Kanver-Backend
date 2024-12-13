@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, session
 from firebase_admin import auth
 import mysql.connector
-from settings_db import db_host, db_password, db_user, db_name
+from database.settings_db import db_host, db_password, db_user, db_name
 import secrets
 
 auth_bp = Blueprint('auth', __name__)

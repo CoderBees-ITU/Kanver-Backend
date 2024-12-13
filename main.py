@@ -1,11 +1,12 @@
-from flask import Flask, jsonify, request, session
+from flask import Flask
 from datetime import timedelta
 import os
-import secrets
 import firebase_admin
-from firebase_admin import credentials, firestore, auth
+from firebase_admin import credentials
 from flask_cors import CORS
-from auth import register
+from src.request import request_bp
+from src.user import user_bp
+from src.auth import auth_bp
 
 app = Flask(__name__)
 CORS(app, support_credentials=True)
@@ -23,31 +24,20 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 # Firebase Admin SDK setup
 cred = credentials.Certificate("firebase-auth.json")
 firebase_admin.initialize_app(cred)
-db = firestore.client()
-
-@app.route('/')
-def hello_world():
-    return jsonify({"message": "Hello, World!"})
-
-@app.route("/register", methods=["POST"])
-def registerC():
-    return register()
 
 
-@app.route("/check-auth", methods=["POST"])
-def check_auth():
-    data = request.get_json() or {}
-    client_session_key = data.get('session_key', None)
 
-    if 'logged_in' in session and session['logged_in']:
-        # Verify the session key matches what we have on server
-        if client_session_key and session.get('session_key') == client_session_key:
-            return jsonify({"message": "User is authenticated", "email": session['email']}), 200
-        else:
-            return jsonify({"message": "Session key mismatch or not provided"}), 401
-    else:
-        return jsonify({"message": str(session["logged_in"])}), 401
-        return jsonify({"message": "Not authenticated"}), 401
+@app.route("/")
+def hello():
+    return "<h1>Ege AWS ile server kurdum!!!</h1>"
+
+
+app.register_blueprint(request_bp, url_prefix='/')
+app.register_blueprint(user_bp, url_prefix='/')
+app.register_blueprint(auth_bp, url_prefix='/')
+
+
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=8080, debug=True)
+
