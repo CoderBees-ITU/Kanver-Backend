@@ -1,10 +1,14 @@
 from flask import Blueprint, request, jsonify, session
-from firebase_admin import auth
+from firebase_admin import auth, app_check
 import mysql.connector
 from database.settings_db import db_host, db_password, db_user, db_name
 import secrets
+import firebase_admin
+import flask
+import jwt
 
 auth_bp = Blueprint('auth', __name__)
+
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
@@ -50,7 +54,7 @@ def register():
             INSERT INTO User (TC_ID, Email, Blood_Type)
             VALUES (%s, %s, %s)
         """
-        values = (tc, email,blood_type)
+        values = (tc, email, blood_type)
         mycursor.execute(insert_query, values)
         mydb.commit()
 
@@ -75,3 +79,29 @@ def register():
         # Consider deleting the Firebase user if DB insertion fails
         # auth.delete_user(user_record.uid)
         return jsonify({"message": f"Database operation failed: {str(e)}"}), 400
+
+
+@auth_bp.route('/check_token', methods=['POST'])
+def check_token():
+    # Parse JSON data from the request
+    data = request.get_json()
+    if not data:
+        return jsonify({"message": "No input data provided"}), 400
+
+    # Check if 'session_key' field is present in the data
+    session_key = data.get('session_key')
+    if not session_key:
+        return jsonify({"message": "Missing field: session_key"}), 400
+
+    # Retrieve the Firebase App Check token from the headers
+
+    try:
+        # Verify the Firebase App Check token
+        decoded_token = auth.verify_id_token(session_key)
+        uid = decoded_token['uid']
+
+        return jsonify({"message": "Token is valid", "claims": uid}), 200
+    except Exception as e:
+        # Handle unexpected errors
+        print(f"Unexpected error: {e}")
+        return jsonify({"message": "Internal server error"}), 500
