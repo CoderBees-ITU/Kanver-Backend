@@ -1,9 +1,7 @@
 -- Drop tables if they already exist (for a clean slate)
-DROP TABLE IF EXISTS Notifications;
-DROP TABLE IF EXISTS On_The_Way;
-DROP TABLE IF EXISTS Banned_Users;
-DROP TABLE IF EXISTS Requests;
-DROP TABLE IF EXISTS User;
+DROP DATABASE kanver;
+CREATE DATABASE kanver;
+USE kanver;
 
 -- Create User table
 CREATE TABLE `User` (

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 import mysql.connector
-from database.settings_db import db_host, db_password, db_user, db_name
+from database.connection import get_db
 
 
 
@@ -30,13 +30,7 @@ def create_user():
     is_eligible = data.get("is_eligible", True)
 
     try:
-        connection = mysql.connector.connect(
-            host=db_host,
-            user=db_user,
-            password=db_password,
-            database=db_name,
-            auth_plugin='mysql_native_password'
-        )
+        connection = get_db()
         cursor = connection.cursor()
 
         # SQL Query to insert a new user
@@ -62,13 +56,7 @@ def create_user():
 @user_bp.route("/get_user/<int:tc>", methods=["GET"])
 def get_user(tc):
     try:
-        connection = mysql.connector.connect(
-            host=db_host,
-            user=db_user,
-            password=db_password,
-            database=db_name,
-            auth_plugin='mysql_native_password'
-        )
+        connection = get_db()
         cursor = connection.cursor(dictionary=True)
 
         # SQL Query to get a user by TC_ID
