@@ -77,3 +77,22 @@ def get_user(tc):
     finally:
         cursor.close()
 
+@user_bp.route("/users", methods=["GET"])
+def get_users():
+    try:
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)
+
+        # SQL Query to get all users
+        select_query = """
+            SELECT COUNT(*) as total FROM User
+        """
+        cursor.execute(select_query)
+        user_count = cursor.fetchone()['total']
+
+        return jsonify({
+                "total" : user_count
+            }), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"message": f"Database error: {err}"}), 500
