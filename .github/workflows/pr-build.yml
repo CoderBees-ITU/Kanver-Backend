@@ -1,0 +1,48 @@
+name: PR Build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the Code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Set Up Docker
+      - name: Set Up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Step 3: Copy .env File (if needed)
+      - name: Copy .env File
+        run: |
+          cp .env.example .env || echo "No .env.example found, skipping..."
+
+      # Step 4: Build the Docker Image
+      - name: Build Docker Image
+        run: |
+          docker build -t my-backend-image:latest -f Dockerfile.prod .
+
+      # Step 5: Run Container to Verify Build
+      - name: Run Container
+        run: |
+          docker run -d --name my-backend-container -p 8080:8080 my-backend-image:latest
+          sleep 4  # Give the container time to start
+          docker ps -a  # List running containers
+
+      # Step 6: Check Application Health
+      - name: Check Application Health
+        run: |
+          curl --fail http://localhost:8080 || (echo "Application failed to respond!" && exit 1)
+
+      # Step 7: Stop and Clean Up Containers
+      - name: Clean Up Containers
+        if: always()
+        run: |
+          docker stop my-backend-container || true
+          docker rm my-backend-container || true
