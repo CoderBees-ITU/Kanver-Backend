@@ -1,0 +1,42 @@
+services:
+  backend:
+    build:
+      dockerfile: Dockerfile.dev
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - DOCKER_MYSQL_HOST=kanver-backend-database-1
+      - DOCKER_MYSQL_USER=kanver_user
+      - DOCKER_MYSQL_PASSWORD=kanver_password
+      - DOCKER_MYSQL_DB=kanver
+    depends_on:
+      - database
+    expose:
+      - "8080"
+
+  database:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=kanver_user
+      - MYSQL_PASSWORD=kanver_password
+      - MYSQL_DATABASE=kanver
+    ports:
+      - "3306:3306"
+    expose:
+      - "3306"
+    volumes:
+
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/1-create_tables.sql
+      # - ./database/2-load_data_docker.sql:/docker-entrypoint-initdb.d/2-load_data.sql
+      # - ./database/dataset:/var/lib/mysql-files
+
+volumes:
+  mysql_data:
