@@ -26,7 +26,7 @@ jobs:
       # Step 4: Build the Docker Image
       - name: Build Docker Image
         run: |
-          docker build -t my-backend-image:latest -f Dockerfile.dev .
+          docker build -t my-backend-image:latest -f Dockerfile.prod .
 
       # Step 5: Run Container to Verify Build
       - name: Run Container
