@@ -1,11 +1,12 @@
 from flask import Blueprint, request, jsonify, session
 from firebase_admin import auth, app_check
 import mysql.connector
-from database.settings_db import db_host, db_password, db_user, db_name
 import secrets
 import firebase_admin
 import flask
 import jwt
+
+from database.connection import get_db
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -40,13 +41,7 @@ def register():
 
     try:
         # Connect to MySQL
-        mydb = mysql.connector.connect(
-            host=db_host,
-            user=db_user,
-            password=db_password,
-            database=db_name,
-            auth_plugin='mysql_native_password'
-        )
+        mydb = get_db()
         mycursor = mydb.cursor()
 
         # Insert user data into the USER table

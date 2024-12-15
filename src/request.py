@@ -1,8 +1,8 @@
 from datetime import datetime
 from flask import jsonify, request
 import mysql.connector
-from database.settings_db import db_host, db_password, db_user, db_name
 from flask import Blueprint
+from database.connection import get_db
 
 
 request_bp = Blueprint('request', __name__)
@@ -31,13 +31,7 @@ def create_request():
     create_time = datetime.now()
 
     try:
-        connection = mysql.connector.connect(
-            host=db_host,
-            user=db_user,
-            password=db_password,
-            database=db_name,
-            auth_plugin='mysql_native_password'
-        )
+        connection = get_db()
         cursor = connection.cursor()
 
         # SQL Query to insert a new request
