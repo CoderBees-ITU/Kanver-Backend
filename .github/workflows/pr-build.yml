@@ -14,16 +14,26 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 2: Set Up Python and Cache Dependencies
+      # Step 2: Set Up Docker
+      - name: Set Up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Step 3: Install Docker Compose
+      - name: Install Docker Compose
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker-compose
+
+      # Step 4: Cache Python Dependencies
       - name: Cache Python Dependencies
         uses: actions/cache@v4.2.0
         with:
-          path: ~/.cache/pip          # Cache pip's directory
+          path: ~/.cache/pip
           key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # Step 3: Build Docker Compose Services
+      # Step 5: Build Docker Compose Services
       - name: Build Docker Compose Services
         run: |
           docker-compose build
@@ -33,11 +43,3 @@ jobs:
         run: |
           docker-compose up -d
           docker-compose ps
-
-      # Optional: Save Docker Logs (useful for debugging)
-      - name: Save Logs on Failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-logs
-          path: docker-compose.logs
