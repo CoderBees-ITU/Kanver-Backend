@@ -1,4 +1,52 @@
 # Flask Backend
+## API Conventions
+
+We follow REST API conventions for structuring our endpoints and responses. Below are the main guidelines:
+
+1. **HTTP Methods**
+   - Use appropriate HTTP methods for different actions:
+     - `GET`: Retrieve data.
+     - `POST`: Create a new resource.
+     <!-- - `PUT`: Update an existing resource entirely. -->
+     - `PATCH`: Update part of an existing resource.
+     - `DELETE`: Remove a resource.
+
+2. **Endpoints**
+   - Endpoints should be descriptive and use plural nouns. Examples:
+     - `/users`: Operations related to users.
+     - `/posts`: Operations related to posts.
+   - Use nested routes to represent relationships. Example:
+     - `/users/{user_id}/posts` for posts belonging to a specific user.
+
+3. **Status Codes**
+   - Use standard HTTP status codes to indicate the result of the operation:
+     - `200`: Success.
+     - `201`: Resource created.
+     - `400`: Bad request.
+     - `401`: Unauthorized.
+     - `404`: Resource not found.
+     - `500`: Internal server error.
+
+4. **Request and Response Format**
+   - Use JSON format for both requests and responses.
+   - Include clear and consistent keys. Example:
+     ```json
+     {
+       "id": 123,
+       "name": "Example User",
+       "email": "user@example.com"
+     }
+     ```
+
+5. **Error Handling**
+   - Return detailed error messages in a consistent format. Example:
+     ```json
+     {
+       "error": "InvalidInput",
+       "message": "The 'email' field is required."
+     }
+     ```
+---
 
 ## Local Development
 
@@ -44,7 +92,6 @@ We have permanent backend instances available for use (as long as credits last).
 | **Tagged Revisions** | **URL**                                      |
 |-----------------------|----------------------------------------------|
 | v1.0.0 ( Exposed secrets ) | [https://stable-but-unsecure---kanver-backend-ujtqwslguq-uc.a.run.app/](https://stable1-unsecure---kanver-backend-ujtqwslguq-uc.a.run.app/) |
-
 
 | **Latest Revision**  | **URL**                                      |
 |-----------------------|----------------------------------------------|
