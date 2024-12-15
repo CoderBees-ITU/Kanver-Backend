@@ -38,12 +38,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      # Step 6: Build Docker Compose Services
+      # Step 6: Install Python Dependencies (If Cache Miss)
+      - name: Install Dependencies
+        if: steps.cache-pip.outputs.cache-hit != 'true'
+        run: |
+          pip install --cache-dir ~/.cache/pip -r requirements.txt
+
+      # Step 7: Build Docker Compose Services
       - name: Build Docker Compose Services
         run: |
           docker-compose build
 
-      # Optional: Start and Verify Services
+      # Optional: Verify Services Start Correctly
       - name: Start Docker Compose Services
         run: |
           docker-compose up -d
