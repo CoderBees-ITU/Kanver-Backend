@@ -37,7 +37,7 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 @app.route("/")
 def hello():
-    return "<h1>Ege AWS ile server kurdum!!!</h1>"
+    return "<h1>Ege AWS ile server kurdum!!!</h1><a href='/users'>Get All Users Count</a>"
 
 
 app.register_blueprint(request_bp, url_prefix='/')
