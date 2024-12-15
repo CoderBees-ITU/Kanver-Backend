@@ -1,33 +1,10 @@
-import mysql.connector
-from settings_db import db_host, db_password, db_user, db_name
+from connection import get_db
 import csv
 import ast
 
 try:
-    mydb = mysql.connector.connect(
-        host=db_host,
-        user=db_user,
-        password=db_password,
-        auth_plugin='mysql_native_password'
-    )
-
-    mycursor = mydb.cursor()
-
-    mycursor.execute(f"CREATE DATABASE {db_name}")
-    print(f"Database {db_name} created")
-    if (mydb.is_connected()):
-        mycursor.close()
-        mydb.close()
-
-    cnx = mysql.connector.connect(
-        user=db_user,
-        password=db_password,
-        host=db_host,
-        database=db_name,
-        auth_plugin='mysql_native_password')
-
+    cnx = get_db()
     cursor = cnx.cursor()
-
     def executeScriptsFromFile(filename):
         fd = open(filename, 'r')
         sqlFile = fd.read()
