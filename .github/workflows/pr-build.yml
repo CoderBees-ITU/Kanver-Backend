@@ -1,9 +1,12 @@
 name: PR Build
 
 on:
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for triggering the build"
+        required: false
+        default: "Manual build trigger"
 
 jobs:
   build:
