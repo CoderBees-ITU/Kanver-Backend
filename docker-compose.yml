@@ -2,6 +2,7 @@ services:
   backend:
     build:
       dockerfile: Dockerfile.dev
+    container_name: backend-service
     env_file:
       - .env
     ports:
@@ -11,7 +12,7 @@ services:
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
-      - DOCKER_MYSQL_HOST=kanver-backend-database-1
+      - DOCKER_MYSQL_HOST=database-service
       - DOCKER_MYSQL_USER=kanver_user
       - DOCKER_MYSQL_PASSWORD=kanver_password
       - DOCKER_MYSQL_DB=kanver
@@ -22,6 +23,7 @@ services:
 
   database:
     image: mysql:8.0
+    container_name: database-service
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_USER=kanver_user
