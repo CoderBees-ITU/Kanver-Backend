@@ -1,4 +1,18 @@
 # Flask Backend
+### Permanent Backend Instances
+
+We have permanent backend instances available for use (as long as credits last). These include tagged revisions and the latest stable revision:
+
+| **Tagged Revisions** | **URL**                                      |
+|-----------------------|----------------------------------------------|
+| v1.0.0 ( Exposed secrets ) | [https://stable-but-unsecure---kanver-backend-ujtqwslguq-uc.a.run.app/](https://stable1-unsecure---kanver-backend-ujtqwslguq-uc.a.run.app/) |
+
+| **Latest Revision**  | **URL**                                      |
+|-----------------------|----------------------------------------------|
+| Latest Revision (Always Latest Successful Build) | [https://latest-revision---kanver-backend-ujtqwslguq-uc.a.run.app](https://latest-revision---kanver-backend-ujtqwslguq-uc.a.run.app) |
+
+Feel free to use these URLs for testing and integration purposes.
+
 ## API Conventions
 
 We follow REST API conventions for structuring our endpoints and responses. Below are the main guidelines:
@@ -85,19 +99,6 @@ Follow these steps to set up and contribute to the Flask backend locally:
      ```
    - This command will spin up both the backend and the database in a Dockerized environment.
 
-### Permanent Backend Instances
-
-We have permanent backend instances available for use (as long as credits last). These include tagged revisions and the latest stable revision:
-
-| **Tagged Revisions** | **URL**                                      |
-|-----------------------|----------------------------------------------|
-| v1.0.0 ( Exposed secrets ) | [https://stable-but-unsecure---kanver-backend-ujtqwslguq-uc.a.run.app/](https://stable1-unsecure---kanver-backend-ujtqwslguq-uc.a.run.app/) |
-
-| **Latest Revision**  | **URL**                                      |
-|-----------------------|----------------------------------------------|
-| Latest Revision (Always Latest Successful Build) | [https://latest-revision---kanver-backend-ujtqwslguq-uc.a.run.app](https://latest-revision---kanver-backend-ujtqwslguq-uc.a.run.app) |
-
-Feel free to use these URLs for testing and integration purposes.
 
 ---
 
