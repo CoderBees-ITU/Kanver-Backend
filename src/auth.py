@@ -84,7 +84,8 @@ def check_token():
 
     # Check if 'session_key' field is present in the data
     session_key = data.get('session_key')
-    if not session_key:
+    id = data.get('uid')
+    if not session_key or not id:
         return jsonify({"message": "Missing field: session_key"}), 400
 
     # Retrieve the Firebase App Check token from the headers
@@ -93,7 +94,10 @@ def check_token():
         # Verify the Firebase App Check token
         decoded_token = auth.verify_id_token(session_key)
         uid = decoded_token['uid']
-
+        # Check if the session key matches the one stored in the server-side session
+        if uid != id:
+            return jsonify({"message": "Token is invalid"}), 401
+        # Return a success response
         return jsonify({"message": "Token is valid", "claims": uid}), 200
     except Exception as e:
         # Handle unexpected errors
