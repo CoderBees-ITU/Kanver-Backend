@@ -5,6 +5,8 @@ import ast
 try:
     cnx = get_db()
     cursor = cnx.cursor()
+
+
     def executeScriptsFromFile(filename):
         fd = open(filename, 'r')
         sqlFile = fd.read()
@@ -18,6 +20,8 @@ try:
                     cursor.execute(command)
             except ValueError as msg:
                 print("Command skipped: ", msg)
+
+
     executeScriptsFromFile('./database/schema.sql')
     cnx.commit()
 
