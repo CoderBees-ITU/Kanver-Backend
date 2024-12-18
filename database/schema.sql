@@ -5,7 +5,7 @@ USE kanver;
 
 -- Create User table
 CREATE TABLE `User` (
-    `User_id`           VARCHAR(255),
+    `User_id`            VARCHAR(255),
     `TC_ID`              BIGINT PRIMARY KEY,
     `Location`           VARCHAR(255),
     `Birth_Date`         DATE NOT NULL,
