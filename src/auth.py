@@ -63,7 +63,7 @@ def register():
 
         # SQL Query to insert a new request
         insert_query = """
-        INSERT INTO USER (
+        INSERT INTO User (
                                 User_id, TC_ID, Location, Birth_Date, Name, Surname,
                                  Email, Blood_Type, Last_Donation_Date, Is_Eligible
                             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
