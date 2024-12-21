@@ -24,27 +24,33 @@ def register():
     email = data["email"]
     password = data["password"]
     name = data["name"]
+    surname = data["surname"]
     tc = data["tc"]
     blood_type = data["blood_type"]
+    birth_date = data.get("birth_date")
 
     try:
         # Connect to MySQL
         mydb = get_db()
         mycursor = mydb.cursor()
 
-        # Check if TC_ID already exists in the database
-        check_query = "SELECT * FROM User WHERE TC_ID = %s"
-        mycursor.execute(check_query, (tc,))
+        # Check if TC_ID or Email already exists in the database
+        check_query = "SELECT * FROM User WHERE TC_ID = %s OR Email = %s"
+        mycursor.execute(check_query, (tc, email))
         existing_user = mycursor.fetchone()
 
         if existing_user:
-            # TC_ID is already in use, return an error response
-            return jsonify({"message": "TC_ID is already registered"}), 400
+            # Determine the cause of the conflict
+            if existing_user[0] == tc:  # Assuming TC_ID is the first column
+                return jsonify({"message": "TC_ID is already registered"}), 400
+            if existing_user[1] == email:  # Assuming Email is the second column
+                return jsonify({"message": "Email is already registered"}), 400
+
         # Create a user in Firebase
         user_record = auth.create_user(
             email=email,
             password=password,
-            display_name=name
+            display_name=name+" "+surname
         )
     except Exception as e:
         # If Firebase user creation fails, report it
@@ -55,12 +61,17 @@ def register():
         mydb = get_db()
         mycursor = mydb.cursor()
 
-        # Insert user data into the USER table
+        # SQL Query to insert a new request
         insert_query = """
-            INSERT INTO User (TC_ID, Email, Blood_Type)
-            VALUES (%s, %s, %s)
-        """
-        values = (tc, email, blood_type)
+        INSERT INTO USER (
+                                User_id, TC_ID, Location, Birth_Date, Name, Surname,
+                                 Email, Blood_Type, Last_Donation_Date, Is_Eligible
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """
+        values = (
+            user_record.uid, tc, None, birth_date, name, surname,
+            email, blood_type, None, True)
+
         mycursor.execute(insert_query, values)
         mydb.commit()
 
