@@ -40,11 +40,7 @@ def register():
         existing_user = mycursor.fetchone()
 
         if existing_user:
-            # Determine the cause of the conflict
-            if existing_user[0] == tc:  # Assuming TC_ID is the first column
-                return jsonify({"message": "TC_ID is already registered"}), 400
-            if existing_user[1] == email:  # Assuming Email is the second column
-                return jsonify({"message": "Email is already registered"}), 400
+            return jsonify({"message": "User already exists"}), 400
 
         # Create a user in Firebase
         user_record = auth.create_user(
@@ -75,27 +71,34 @@ def register():
         mycursor.execute(insert_query, values)
         mydb.commit()
 
-        # Create a server-side session
-        session['user_id'] = user_record.uid
-        session['email'] = email
-        session['logged_in'] = True
-
-        # Generate a session key to return to the client
-        session_key = secrets.token_hex(16)
-        session['session_key'] = session_key
-
         # Close the cursor and connection
         mycursor.close()
         mydb.close()
 
+        custom_token = auth.create_custom_token(user_record.uid)
+
         return jsonify({
             "message": "User created successfully",
-            "session_key": session_key
+            "user_id": user_record.uid,
+            "session_key": custom_token.decode('utf-8'),
         }), 200
     except Exception as e:
-        # Consider deleting the Firebase user if DB insertion fails
-        # auth.delete_user(user_record.uid)
+        # Delete the Firebase user if the database operation fails
+        try:
+            auth.delete_user(user_record.uid)
+        except Exception as cleanup_error:
+            return jsonify({
+                "message": f"Database and Firebase cleanup failed: {str(e)}, {str(cleanup_error)}"
+            }), 500
+
         return jsonify({"message": f"Database operation failed: {str(e)}"}), 400
+    finally:
+        # Ensure database resources are closed
+        if mycursor:
+            mycursor.close()
+        if mydb:
+            mydb.close()
+
 
 
 @auth_bp.route('/check_token', methods=['POST'])
