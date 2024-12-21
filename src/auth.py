@@ -28,6 +28,18 @@ def register():
     blood_type = data["blood_type"]
 
     try:
+        # Connect to MySQL
+        mydb = get_db()
+        mycursor = mydb.cursor()
+
+        # Check if TC_ID already exists in the database
+        check_query = "SELECT * FROM User WHERE TC_ID = %s"
+        mycursor.execute(check_query, (tc,))
+        existing_user = mycursor.fetchone()
+
+        if existing_user:
+            # TC_ID is already in use, return an error response
+            return jsonify({"message": "TC_ID is already registered"}), 400
         # Create a user in Firebase
         user_record = auth.create_user(
             email=email,
