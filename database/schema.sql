@@ -62,6 +62,13 @@ CREATE TABLE Notifications (
     FOREIGN KEY (Request_ID) REFERENCES Requests(Request_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+-- Create Locations table
+CREATE TABLE Locations (
+    City_Name       VARCHAR(50) NOT NULL,
+    District_Name   VARCHAR(50) NOT NULL,
+    PRIMARY KEY(City_Name, District_Name)
+);
+
 -- Optionally create indexes for foreign keys to improve performance
 CREATE INDEX idx_requests_requested_tc_id ON Requests (Requested_TC_ID);
 CREATE INDEX idx_requests_patient_tc_id ON Requests (Patient_TC_ID);
