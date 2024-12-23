@@ -30,14 +30,14 @@ CREATE TABLE Banned_Users (
 CREATE TABLE Requests (
     Request_ID       BIGINT PRIMARY KEY AUTO_INCREMENT,
     Requested_TC_ID  BIGINT NOT NULL,
-    Patient_TC_ID    BIGINT,
-    Blood_Type       VARCHAR(10),
-    Age              INT,
-    Gender           VARCHAR(10),
+    Patient_TC_ID    BIGINT NOT NULL,
+    Blood_Type       VARCHAR(3) NOT NULL,
+    Age              INT NOT NULL,
+    Gender           VARCHAR(10) NOT NULL,
     Note             TEXT,
-    Location         VARCHAR(255),
+    Location         VARCHAR(255) NOT NULL,
     Coordinates      VARCHAR(255),
-    Status           VARCHAR(50),
+    Status           VARCHAR(50) NOT NULL,
     Create_Time      DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (Requested_TC_ID) REFERENCES User(TC_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
