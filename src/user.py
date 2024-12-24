@@ -3,6 +3,7 @@ import mysql.connector
 from database.connection import get_db
 
 user_bp = Blueprint('user', __name__)
+banned_bp = Blueprint('banned', __name__)
 
 @user_bp.route("/users", methods=["GET"])
 def get_all_users():
@@ -117,3 +118,37 @@ def update_user(tc_id):
     finally:
         cursor.close()
         connection.close()
+        
+        
+@user_bp.route('/delete_user/<int:tc_id>', methods=['DELETE'])
+def delete_user(tc_id):
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+
+        check_user_query = "SELECT COUNT(*) FROM User WHERE TC_ID = %s"
+        cursor.execute(check_user_query, (tc_id,))
+        user_exists = cursor.fetchone()[0]
+
+        if not user_exists:
+            return jsonify({"error": "NotFound", "message": "User not found."}), 404
+
+        # Kullanıcıyı silme
+        delete_user_query = "DELETE FROM User WHERE TC_ID = %s"
+        cursor.execute(delete_user_query, (tc_id,))
+        connection.commit()
+        
+        #on delete cascade olduğu için gereksiz
+        # delete_user_if_banned_query = "DELETE FROM Banned_user WHERE TC_ID = %s"
+        # cursor.execute(delete_user_if_banned_query, (tc_id,))
+        # connection.commit()
+
+        return jsonify({"message": "User deleted successfully."}), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+
