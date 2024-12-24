@@ -74,3 +74,46 @@ def get_users():
         cursor.close()
         connection.close()
 
+
+@user_bp.route("/user/<int:tc_id>", methods=["PUT"])
+def update_user(tc_id):
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "InvalidInput", "message": "No input data provided."}), 400
+
+    #is_eligible şimdilik dursun duruma göre değiştirebiliriz
+    updatable_fields = ["name", "surname", "email", "blood_type", "location", "last_donation_date", "is_eligible"]
+    updates = []
+    values = []
+
+    for field in updatable_fields:
+        if field in data:
+            updates.append(f"{field} = %s")
+            values.append(data[field])
+
+    if not updates:
+        return jsonify({"error": "InvalidInput", "message": "No valid fields provided for update."}), 400
+
+
+    query = f"UPDATE User SET {', '.join(updates)} WHERE TC_ID = %s"
+    values.append(tc_id)
+
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+
+        cursor.execute(query, values)
+        connection.commit()
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "NotFound", "message": "No user found with the given TC ID."}), 404
+
+        return jsonify({"message": "User updated successfully."}), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
