@@ -38,8 +38,8 @@ services:
 
       - mysql_data:/var/lib/mysql
       - ./database/schema.sql:/docker-entrypoint-initdb.d/1-create_tables.sql
-      # - ./database/2-load_data_docker.sql:/docker-entrypoint-initdb.d/2-load_data.sql
-      # - ./database/dataset:/var/lib/mysql-files
+      - ./database/load_data.sql:/docker-entrypoint-initdb.d/2-load_data.sql
+      - ./database/dataset:/var/lib/mysql-files
 
 volumes:
   mysql_data:
