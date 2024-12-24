@@ -11,35 +11,42 @@ def handle_request():
     elif request.method == "POST":
         return create_request()
     
+@request_bp.route("/request/filter", methods=["POST"])
 def get_requests():
     data = request.get_json()
     if not data:
-        data = {}
+        return jsonify({"message": "No input data provided"}), 400
 
     query = "SELECT * FROM Requests WHERE 1=1"
     filters = []
 
-    filterable_fields = [
-        "requested_tc_id", "patient_tc_id", "blood_type", 
-        "age", "gender", "location", "status"
-    ]
-    
-    #LOCATION PROCESSING WILL BE MADE HERE!!!!!!!!!!
-
-    for field in filterable_fields:
-        value = data.get(field)
-        if value:
-            query += f" AND {field.replace('_', ' ').title().replace(' ', '_')} = %s"
-            filters.append(value)
-        
-    print(query)
+    if "requested_tc_id" in data:
+        query += " AND Requested_TC_ID = %s"
+        filters.append(data["requested_tc_id"])
+    if "patient_tc_id" in data:
+        query += " AND Patient_TC_ID = %s"
+        filters.append(data["patient_tc_id"])
+    if "blood_type" in data:
+        query += " AND Blood_Type = %s"
+        filters.append(data["blood_type"].strip())
+    if "age" in data:
+        query += " AND Age = %s"
+        filters.append(data["age"])
+    if "gender" in data:
+        query += " AND Gender = %s"
+        filters.append(data["gender"])
+    if "location" in data:
+        query += " AND Location = %s"
+        filters.append(data["location"])
+    if "status" in data:
+        query += " AND Status = %s"
+        filters.append(data["status"])
 
     query += " ORDER BY Create_Time DESC"
 
     try:
         connection = get_db()
-        cursor = connection.cursor(dictionary=True)  # Use dictionary cursor for JSON-friendly output
-
+        cursor = connection.cursor(dictionary=True)
         cursor.execute(query, filters)
         results = cursor.fetchall()
 
@@ -56,7 +63,69 @@ def get_requests():
         connection.close()
 
     
-    
+def get_requests():
+    # Extract query parameters
+    requested_tc_id = request.args.get("requested_tc_id")
+    patient_tc_id = request.args.get("patient_tc_id")
+    blood_type = request.args.get("blood_type")
+    age = request.args.get("age")
+    gender = request.args.get("gender")
+    location = request.args.get("location")
+    status = request.args.get("status")
+
+    # Initialize query and filters
+    query = "SELECT * FROM Requests WHERE 1=1"
+    filters = []
+
+    # Dynamically build query based on provided parameters
+    if requested_tc_id:
+        query += " AND Requested_TC_ID = %s"
+        filters.append(requested_tc_id)
+    if patient_tc_id:
+        query += " AND Patient_TC_ID = %s"
+        filters.append(patient_tc_id)
+    if blood_type:
+        query += " AND Blood_Type = %s"
+        filters.append(blood_type)
+    if age:
+        query += " AND Age = %s"
+        filters.append(age)
+    if gender:
+        query += " AND Gender = %s"
+        filters.append(gender)
+    if location:
+        query += " AND Location = %s"
+        filters.append(location)
+    if status:
+        query += " AND Status = %s"
+        filters.append(status)
+
+    # Add ordering
+    query += " ORDER BY Create_Time DESC"
+
+    print(query)
+    print(filters)
+
+    try:
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)  # Use dictionary cursor for JSON-friendly output
+
+        # Execute the query
+        cursor.execute(query, filters)
+        results = cursor.fetchall()
+
+        if not results:
+            return jsonify({"message": "No requests found"}), 404
+
+        return jsonify(results), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"message": f"Database error: {err}"}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+
     
 def create_request():
     data = request.get_json()
