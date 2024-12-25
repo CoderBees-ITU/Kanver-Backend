@@ -5,6 +5,7 @@ USE kanver;
 
 -- Create User table
 CREATE TABLE `User` (
+    `User_id`            VARCHAR(255),
     `TC_ID`              BIGINT PRIMARY KEY,
     `Location`           VARCHAR(255),
     `Birth_Date`         DATE NOT NULL,
@@ -59,6 +60,13 @@ CREATE TABLE Notifications (
     Notification_Type  VARCHAR(50),
     Message            TEXT,
     FOREIGN KEY (Request_ID) REFERENCES Requests(Request_ID) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- Create Locations table
+CREATE TABLE Locations (
+    City_Name       VARCHAR(50) NOT NULL,
+    District_Name   VARCHAR(50) NOT NULL,
+    PRIMARY KEY(City_Name, District_Name)
 );
 
 -- Optionally create indexes for foreign keys to improve performance

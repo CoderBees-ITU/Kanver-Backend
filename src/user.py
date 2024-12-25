@@ -3,7 +3,6 @@ import mysql.connector
 from database.connection import get_db
 
 user_bp = Blueprint('user', __name__)
-banned_bp = Blueprint('banned', __name__)
 
 @user_bp.route("/users", methods=["GET"])
 def get_all_users():
@@ -14,6 +13,7 @@ def get_all_users():
         query = "SELECT * FROM User"
         cursor.execute(query)
         users = cursor.fetchall()
+
 
         if not users:
             return jsonify({"error": "NotFound", "message": "No users found in the database."}), 404
@@ -26,6 +26,7 @@ def get_all_users():
     finally:
         cursor.close()
         connection.close()
+
 
 
 @user_bp.route("/user/<int:tc_id>", methods=["GET"])
@@ -52,6 +53,7 @@ def get_user_by_tc(tc_id):
         connection.close()
 
 @user_bp.route("/users/count", methods=["GET"])
+
 def get_users():
     try:
         connection = get_db()
@@ -65,8 +67,8 @@ def get_users():
         user_count = cursor.fetchone()['total']
 
         return jsonify({
-                "total" : user_count
-            }), 200
+            "total": user_count
+        }), 200
 
     except mysql.connector.Error as err:
         return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
@@ -151,4 +153,3 @@ def delete_user(tc_id):
     finally:
         cursor.close()
         connection.close()
-

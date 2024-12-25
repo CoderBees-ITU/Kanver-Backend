@@ -1,0 +1,137 @@
+{
+	"info": {
+		"_postman_id": "45993ef2-42bd-4750-8951-70f103919618",
+		"name": "KanVer",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32995023"
+	},
+	"item": [
+		{
+			"name": "Register",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"example@example.com\",\r\n    \"password\": \"SecurePassword123\",\r\n    \"name\": \"Ahmet\",\r\n    \"surname\": \"Mehmet\",\r\n    \"tc\": \"12345678901\",\r\n    \"blood_type\": \"A+\",\r\n    \"birth_date\": \"2003-01-01\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/register",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check Token",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"uid\": \"\",\r\n    \"session_key\": \"\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/check_token",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"check_token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Request",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"requested_tc_id\": \"12345678901\",     //requested_tc_id must be registered into the database beforehand.\r\n    \"patient_tc_id\": \"1345678901\",        //patient_tc_id does not have to be registered\r\n    \"blood_type\": \"0-\",\r\n    \"age\": 21,\r\n    \"gender\": \"male\",\r\n    \"location\": \"CITY,DISTRICT\",\r\n    \"status\": \"pending\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/request",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"request"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Requests",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"blood_type\": \"A+\",\r\n    \"status\": \"pending\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/request",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"request"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
