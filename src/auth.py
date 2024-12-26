@@ -97,6 +97,7 @@ def register():
         if mycursor:
             mycursor.close()
         if mydb:
+
             mydb.close()
 
 @auth_bp.route('/login', methods=['POST'])
