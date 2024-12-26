@@ -2,68 +2,85 @@ from datetime import datetime
 from flask import Blueprint, jsonify, request
 import mysql.connector
 from database.connection import get_db
+from src.middleware import auth_required
 
 request_bp = Blueprint('request', __name__)
 
-@request_bp.route("/request", methods=["GET", "POST"])
-def handle_request():
-    if request.method == "GET":
-        return get_requests()
-    elif request.method == "POST":
-        return create_request()
-
-@request_bp.route("/request/filter", methods=["POST"])
+@request_bp.route("/request", methods=["GET"])
+# auth_required will be commented out 
+# @auth_required
 def get_requests():
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "InvalidInput", "message": "No input data provided."}), 400
+    requested_tc_id = request.args.get("requested_tc_id")
+    patient_tc_id = request.args.get("patient_tc_id")
+    blood_type = request.args.get("blood_type")
+    age = request.args.get("age")
+    gender = request.args.get("gender")
+    location = request.args.get("location")
+    status = request.args.get("status")
+    request_id = request.args.get("request_id")
 
+    # Start building the query
     query = "SELECT * FROM Requests WHERE 1=1"
     filters = []
 
-    if "requested_tc_id" in data:
+    # Add filters based on available parameters
+    if requested_tc_id:
         query += " AND Requested_TC_ID = %s"
-        filters.append(data["requested_tc_id"])
-    if "patient_tc_id" in data:
+        filters.append(requested_tc_id)
+    if patient_tc_id:
         query += " AND Patient_TC_ID = %s"
-        filters.append(data["patient_tc_id"])
-    if "blood_type" in data:
+        filters.append(patient_tc_id)
+    if blood_type:
         query += " AND Blood_Type = %s"
-        filters.append(data["blood_type"].strip())
-    if "age" in data:
+        filters.append(blood_type.strip())
+    if age:
         query += " AND Age = %s"
-        filters.append(data["age"])
-    if "gender" in data:
+        filters.append(age)
+    if gender:
         query += " AND Gender = %s"
-        filters.append(data["gender"])
-    if "location" in data:
+        filters.append(gender)
+    if location:
         query += " AND Location = %s"
-        filters.append(data["location"])
-    if "status" in data:
+        filters.append(location)
+    if status:
         query += " AND Status = %s"
-        filters.append(data["status"])
+        filters.append(status)
+    if request_id:
+        query += " AND Request_ID = %s"
+        filters.append(request_id)
 
     query += " ORDER BY Create_Time DESC"
 
     try:
+        # Connect to the database
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
         cursor.execute(query, filters)
         results = cursor.fetchall()
 
+        # Check if results exist
         if not results:
             return jsonify({"error": "NotFound", "message": "No requests found."}), 404
 
+        # Return the results as JSON
         return jsonify(results), 200
 
     except mysql.connector.Error as err:
+        # Handle database errors
         return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
 
     finally:
+        # Ensure cursor and connection are closed
         cursor.close()
         connection.close()
 
+@request_bp.route("/request", methods=["POST"])
+# @auth_required
 def create_request():
+    validUser = check_token()
+    if not validUser:
+        return jsonify({"error": "Unauthorized", "message": "User ID does not match the token."}), 401
+    
     data = request.get_json()
     if not data:
         return jsonify({"error": "InvalidInput", "message": "No input data provided."}), 400
