@@ -97,4 +97,70 @@ def register():
         if mycursor:
             mycursor.close()
         if mydb:
+
             mydb.close()
+
+@auth_bp.route('/login', methods=['POST'])
+def login():
+    connection = None
+    cursor = None
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"message": "No input data provided"}), 400
+
+        id_token = data.get('idToken')
+        if not id_token:
+            return jsonify({"message": "Missing required field: idToken"}), 400
+
+        # Verify Firebase ID token
+        decoded_token = auth.verify_id_token(id_token)
+        email = decoded_token.get('email')
+
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)
+
+        check_user_query = "SELECT * FROM User WHERE Email = %s"
+        cursor.execute(check_user_query, (email,))
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"message": "User not found"}), 404
+
+        check_ban_query = "SELECT * FROM Banned_Users WHERE TC_ID = %s"
+        cursor.execute(check_ban_query, (user['TC_ID'],))
+        banned_user = cursor.fetchone()
+
+        if banned_user:
+            return jsonify({
+                "message": "User is banned",
+                "ban_reason": banned_user["Cause"],
+                "unban_date": banned_user["Unban_Date"]
+            }), 403
+
+        # Return user details
+        return jsonify({
+            "message": "Login successful",
+            "user": {
+                "id": user['User_id'],
+                "name": user['Name'],
+                "surname": user['Surname'],
+                "email": user['Email'],
+                "blood_type": user['Blood_Type'],
+                "is_eligible": user['Is_Eligible']
+            }
+        }), 200
+
+    except auth.InvalidIdTokenError:
+        return jsonify({"message": "Invalid ID token"}), 401
+
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({"message": "Internal server error"}), 500
+
+    finally:
+        #gpt önerdi neden bilmiyorum
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
