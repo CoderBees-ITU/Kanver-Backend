@@ -1,10 +1,11 @@
 from flask import Blueprint, request, jsonify
 from database.connection import get_db
-from flask_mail import Message
-
 
 import json
 import requests
+
+
+notification_bp = Blueprint("notification", __name__)
 
 API_KEY = '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'
 SENDER_EMAIL = "kul3562@gmail.com"
@@ -55,7 +56,6 @@ def send_email(common_params, recipients):
         print(response.text)
         return None
 
-notification_bp = Blueprint("notification", __name__)
 
 @notification_bp.route("/create", methods=["POST"])
 def create_notification():
@@ -75,7 +75,6 @@ def create_notification():
     common_params = data["common_params"]
 
     try:
-        # Veritabanı bağlantısı ve cursor oluşturma
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
 
