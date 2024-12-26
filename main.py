@@ -8,6 +8,7 @@ from src.request import request_bp
 from src.user import user_bp
 from src.auth import auth_bp
 from src.banned_user import banned_bp
+from src.notificaion import notification_bp
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -45,6 +46,7 @@ app.register_blueprint(request_bp, url_prefix='/')
 app.register_blueprint(user_bp, url_prefix='/')
 app.register_blueprint(auth_bp, url_prefix='/')
 app.register_blueprint(banned_bp, url_prefix='/')
+app.register_blueprint(notification_bp, url_prefix='/')
 
 
 
