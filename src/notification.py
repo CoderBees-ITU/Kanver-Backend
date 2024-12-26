@@ -86,7 +86,7 @@ def create_notification():
             FROM 
                 User
             WHERE 
-                Blood_Type = %s;
+                Blood_Type = %s and is_Eligible=True;
         """
         cursor.execute(query, (common_params["blood"],))
         tmp_recipients = cursor.fetchall()
@@ -96,10 +96,10 @@ def create_notification():
 
         # Bildirimi Notifications tablosuna ekle
         insert_query = """
-            INSERT INTO Notifications (Request_ID, Notification_Type, Message)
-            VALUES (%s, %s, %s)
+            INSERT INTO Notifications (Request_ID, Notification_Type, Message, total)
+            VALUES (%s, %s, %s,%s)
         """
-        cursor.execute(insert_query, (request_id, notification_type, message))
+        cursor.execute(insert_query, (request_id, notification_type, message,len(tmp_recipients)))
         connection.commit()
 
         notification_id = cursor.lastrowid

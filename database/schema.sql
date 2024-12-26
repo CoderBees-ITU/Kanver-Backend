@@ -59,6 +59,7 @@ CREATE TABLE Notifications (
     Request_ID         BIGINT NOT NULL,
     Notification_Type  VARCHAR(50),
     Message            TEXT,
+    Total_Mail_Sent    int,
     FOREIGN KEY (Request_ID) REFERENCES Requests(Request_ID) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
