@@ -15,6 +15,7 @@ def load_configs(app):
 
     app.config['DEBUG'] = os.getenv("DEBUG", "True") == "True"
     app.config['PORT'] = int(os.getenv("PORT", 8080))
+    app.config['MYSQL_PORT'] = int(os.getenv("DOCKER_MYSQL_PORT",os.getenv("MYSQL_PORT", "localhost")))
     app.config['MYSQL_HOST'] = os.getenv("DOCKER_MYSQL_HOST",os.getenv("MYSQL_HOST", "localhost"))
     app.config['MYSQL_USER'] = os.getenv("DOCKER_MYSQL_USER",os.getenv("MYSQL_USER", "root"))
     app.config['MYSQL_PASSWORD'] = os.getenv("DOCKER_MYSQL_PASSWORD",os.getenv("MYSQL_PASSWORD", "root"))
