@@ -1,24 +1,29 @@
 from flask import current_app
 import mysql.connector
 from mysql.connector import Error
-
-def get_db():
+def get_db(config=None):
     try:
+        if config is None:
+            config = {
+                'MYSQL_PORT': current_app.config['MYSQL_PORT'],
+                'MYSQL_HOST': current_app.config['MYSQL_HOST'],
+                'MYSQL_USER': current_app.config['MYSQL_USER'],
+                'MYSQL_PASSWORD': current_app.config['MYSQL_PASSWORD'],
+                'MYSQL_DB': current_app.config['MYSQL_DB'],
+            }
         connection = mysql.connector.connect(
-            host=current_app.config['MYSQL_HOST'],
-            user=current_app.config['MYSQL_USER'],
-            password=current_app.config['MYSQL_PASSWORD'],
-            database=current_app.config['MYSQL_DB'],
+            port=config['MYSQL_PORT'],
+            host=config['MYSQL_HOST'],
+            user=config['MYSQL_USER'],
+            password=config['MYSQL_PASSWORD'],
+            database=config['MYSQL_DB'],
             auth_plugin='mysql_native_password'
         )
         if connection.is_connected():
             return connection
         else:
-            current_app.logger.error(f"Error: {err}")
             raise Exception("Failed to connect to the database.")
     except Error as err:
-        current_app.logger.error(f"Error: {err}")
         raise Exception(f"Database connection failed: {err}")
     except Exception as err:
-        current_app.logger.error(f"Unexpected error: {err}")
         raise Exception(f"Unexpected error: {err}")
