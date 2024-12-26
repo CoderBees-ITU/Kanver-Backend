@@ -81,12 +81,12 @@ def create_notification():
         # Kan grubu eşleşen alıcıları sorgula
         query = """
             SELECT 
-                CONCAT(Name, ' ', Surname) AS fullName,
-                Email
+            CONCAT(Name, ' ', Surname) AS fullName, Email
             FROM 
-                User
-            WHERE 
-                Blood_Type = %s and is_Eligible=True;
+            User join Banned_Users on
+            User.TC_ID <> Banned_Users.TC_ID
+            where
+            Blood_Type = %s and is_Eligible=True;
         """
         cursor.execute(query, (common_params["blood"],))
         tmp_recipients = cursor.fetchall()
