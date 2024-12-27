@@ -7,7 +7,8 @@ USE kanver;
 CREATE TABLE `User` (
     `User_id`            VARCHAR(255),
     `TC_ID`              BIGINT PRIMARY KEY,
-    `Location`           VARCHAR(255),
+    `City`               VARCHAR(255),
+    `District`           VARCHAR(255),
     `Birth_Date`         DATE NOT NULL,
     `Name`               VARCHAR(255) NOT NULL,
     `Surname`            VARCHAR(255) NOT NULL,
@@ -35,8 +36,11 @@ CREATE TABLE Requests (
     Age              INT NOT NULL,
     Gender           VARCHAR(10) NOT NULL,
     Note             TEXT,
-    Location         VARCHAR(255) NOT NULL,
-    Coordinates      VARCHAR(255),
+    Lat              DECIMAL(9,6),
+    Lng              DECIMAL(9,6),
+    City             VARCHAR(50),
+    District         VARCHAR(100),
+    Hospital         VARCHAR(200),
     Status           VARCHAR(50) NOT NULL,
     Create_Time      DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (Requested_TC_ID) REFERENCES User(TC_ID) ON DELETE CASCADE ON UPDATE CASCADE

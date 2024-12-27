@@ -16,7 +16,7 @@ def register():
     if not data:
         return jsonify({"message": "No input data provided"}), 400
 
-    required_fields = ["email", "password", "name", "tc", "blood_type"]
+    required_fields = ["email", "password", "name", "surname", "tc", "blood_type", "birth_date"]
     for field in required_fields:
         if field not in data:
             return jsonify({"message": f"Missing field: {field}"}), 400
@@ -60,12 +60,12 @@ def register():
         # SQL Query to insert a new request
         insert_query = """
         INSERT INTO User (
-                                User_id, TC_ID, Location, Birth_Date, Name, Surname,
+                                User_id, TC_ID, City, District, Birth_Date, Name, Surname,
                                  Email, Blood_Type, Last_Donation_Date, Is_Eligible
-                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """
         values = (
-            user_record.uid, tc, None, birth_date, name, surname,
+            user_record.uid, tc, None, None, birth_date, name, surname,
             email, blood_type, None, True)
 
         mycursor.execute(insert_query, values)
