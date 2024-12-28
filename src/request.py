@@ -66,9 +66,12 @@ def get_requests():
         cursor.execute(query, filters)
         results = cursor.fetchall()
 
-        # Check if results exist
-        if not results:
-            return jsonify({"error": "NotFound", "message": "No requests found."}), 404
+        for row in results:
+            row['Create_Time'] = row['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
+
+        # Return the results as JSON
+        return jsonify(results), 200
+
 
         # Return the results as JSON
         return jsonify(results), 200
@@ -86,23 +89,38 @@ def get_requests():
 # @auth_required
 def create_request():    
     data = request.get_json()
+    print(request.headers)
+    user_id = request.headers.get("Authorization")
     if not data:
         return jsonify({"error": "InvalidInput", "message": "No input data provided."}), 400
+    
+    if not user_id:
+        return jsonify({"error": "InvalidInput", "message": "User ID is required."  }), 400
+    
+    required_fields = ["donor_count", "location", "hospital", "status", "gender"]
 
-    required_fields = ["requested_tc_id", "patient_tc_id", "blood_type", "age", "gender", "location", "hospital", "status"]
+    if "patient_tc_id" not in data:
+        required_fields.append("blood_type")
+        required_fields.append("age")
+        required_fields.append("patient_name")
+        required_fields.append("patient_surname")
+        
+
     for field in required_fields:
         if field not in data:
             return jsonify({"error": "InvalidInput", "message": f"The '{field}' field is required."}), 400
 
-    requested_tc_id = data["requested_tc_id"]
+    requested_tc_id = ""
     patient_tc_id = data.get("patient_tc_id")
     blood_type = data["blood_type"]
     age = data.get("age")
     gender = data.get("gender")
     note = data.get("note")
+    donor_count = data["donor_count"]
     location = data["location"]              #location is a dictionary
+    patient_name = data.get("patient_name") 
+    patient_surname = data.get("patient_surname")
     hospital = data["hospital"]
-    coordinates = data.get("coordinates")
     status = data["status"]
     create_time = datetime.now()
     
@@ -110,45 +128,58 @@ def create_request():
     district = location.get("district")
     lat= location.get("lat")
     lng = location.get("lng")
+    print(lat)
+    print(lng)
 
     try:
         connection = get_db()
         cursor = connection.cursor()
+        
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
 
-        check_user_query = "SELECT COUNT(*) FROM User WHERE TC_ID = %s"
-        cursor.execute(check_user_query, (requested_tc_id,))
-        result = cursor.fetchone()
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
 
-        if result[0] == 0:
-            return jsonify({"error": "InvalidInput", "message": "TC_ID of requester is not found in the database."}), 400
 
-        check_location_query = "SELECT COUNT(*) FROM Locations WHERE City_Name = %s AND District_Name = %s"
-        cursor.execute(check_location_query, (city, district + "\r"))
-        location_result = cursor.fetchone()
+        requested_tc_id = user[1]
 
-        if location_result[0] == 0:
-            return jsonify({"error": "InvalidInput", "message": "Invalid location."}), 400
+        if patient_tc_id is None or patient_tc_id == "" or patient_tc_id == 0:
+            patient_tc_id = requested_tc_id
+            birth_date = user[4] 
+            age = datetime.now().year - birth_date.year
+            blood_type = user[8]
+            patient_name = user[5]
+            patient_surname = user[6]
+
+        # check_location_query = "SELECT COUNT(*) FROM Locations WHERE City_Name = %s AND District_Name = %s"
+        # cursor.execute(check_location_query, (city, district))
+        # location_result = cursor.fetchone()
+
+        # if location_result[0] == 0:
+        #     return jsonify({"error": "InvalidInput", "message": "Invalid location."}), 400
 
         valid_blood_types = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', '0+', '0-']
         if blood_type not in valid_blood_types:
             return jsonify({"error": "InvalidInput", "message": "Invalid blood type provided."}), 400
 
-        check_spam_query = "SELECT COUNT(*) FROM Requests WHERE Requested_TC_ID = %s AND Patient_TC_ID = %s AND Status = %s"
-        cursor.execute(check_spam_query, (requested_tc_id, patient_tc_id, status))
-        spam_result = cursor.fetchone()
+        # check_spam_query = "SELECT COUNT(*) FROM Requests WHERE Requested_TC_ID = %s AND Patient_TC_ID = %s AND Status = %s"
+        # cursor.execute(check_spam_query, (requested_tc_id, patient_tc_id, status))
+        # spam_result = cursor.fetchone()
 
-        if spam_result[0] > 0:
-            return jsonify({"error": "InvalidInput", "message": "Duplicate request detected. Spam prevention triggered."}), 400
+        # if spam_result[0] > 3:
+        #     return jsonify({"error": "InvalidInput", "message": "Duplicate request detected. Spam prevention triggered."}), 400
 
         insert_query = """
             INSERT INTO Requests (
                 Requested_TC_ID, Patient_TC_ID, Blood_Type, Age, Gender, Note,
-                Lat, Lng, City, District, Hospital, Status, Create_Time
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                Lat, Lng, City, District, Hospital, Status, Create_Time, Donor_Count, Patient_Name, Patient_Surname
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         values = (
             requested_tc_id, patient_tc_id, blood_type, age, gender, note,
-            lat, lng, city, district, hospital, status, create_time
+            lat, lng, city, district, hospital, status, create_time, donor_count, patient_name, patient_surname
         )
 
         cursor.execute(insert_query, values)
