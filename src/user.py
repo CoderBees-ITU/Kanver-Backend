@@ -30,15 +30,15 @@ def get_all_users():
 
 
 
-@user_bp.route("/user/<int:tc_id>", methods=["GET"])
-def get_user_by_tc(tc_id):
+@user_bp.route("/user/<string:user_id>", methods=["GET"])
+def get_user_by_tc(user_id):
 
     try:
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
 
-        query = "SELECT * FROM User WHERE TC_ID = %s"
-        cursor.execute(query, (tc_id,))
+        query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(query, (user_id,))
         user = cursor.fetchone()
 
         if not user:
