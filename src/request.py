@@ -22,7 +22,7 @@ def get_requests():
     request_id = request.args.get("request_id")
 
     # Start building the query
-    query = "SELECT *, date_format(Create_Time, '%Y-%m-%d %H:%i:%s') as Create_Time FROM Requests WHERE 1=1"
+    query = "SELECT * FROM Requests WHERE 1=1"
     filters = []
 
     # Add filters based on available parameters
@@ -65,6 +65,12 @@ def get_requests():
         cursor = connection.cursor(dictionary=True)
         cursor.execute(query, filters)
         results = cursor.fetchall()
+
+        for row in results:
+            row['Create_Time'] = row['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
+
+        # Return the results as JSON
+        return jsonify(results), 200
 
 
         # Return the results as JSON
