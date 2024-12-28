@@ -79,8 +79,8 @@ def get_users():
         connection.close()
 
 
-@user_bp.route("/user/<int:tc_id>", methods=["PUT"])
-def update_user(tc_id):
+@user_bp.route("/user/<string:user_id>", methods=["PUT"])
+def update_user(user_id):
 
     data = request.get_json()
     if not data:
@@ -100,8 +100,8 @@ def update_user(tc_id):
         return jsonify({"error": "InvalidInput", "message": "No valid fields provided for update."}), 400
 
 
-    query = f"UPDATE User SET {', '.join(updates)} WHERE TC_ID = %s"
-    values.append(tc_id)
+    query = f"UPDATE User SET {', '.join(updates)} WHERE user_id = %s"
+    values.append(user_id)
 
     try:
         connection = get_db()
@@ -111,7 +111,7 @@ def update_user(tc_id):
         connection.commit()
 
         if cursor.rowcount == 0:
-            return jsonify({"error": "NotFound", "message": "No user found with the given TC ID."}), 404
+            return jsonify({"error": "NotFound", "message": "No user found with the given user_id."}), 404
 
         return jsonify({"message": "User updated successfully."}), 200
 
