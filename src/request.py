@@ -15,7 +15,9 @@ def get_requests():
     blood_type = request.args.get("blood_type")
     age = request.args.get("age")
     gender = request.args.get("gender")
-    location = request.args.get("location")
+    city = request.args.get("city")
+    district = request.args.get("district")
+    hospital = request.args.get("hospital")
     status = request.args.get("status")
     request_id = request.args.get("request_id")
 
@@ -39,9 +41,15 @@ def get_requests():
     if gender:
         query += " AND Gender = %s"
         filters.append(gender)
-    if location:
-        query += " AND Location = %s"
-        filters.append(location)
+    if city:
+        query += " AND City = %s"
+        filters.append(city)
+    if district:
+        query += " AND District = %s"
+        filters.append(district)
+    if hospital:
+        query += " AND Hospital = %s"
+        filters.append(hospital)
     if status:
         query += " AND Status = %s"
         filters.append(status)
@@ -76,16 +84,12 @@ def get_requests():
 
 @request_bp.route("/request", methods=["POST"])
 # @auth_required
-def create_request():
-    validUser = check_token()
-    if not validUser:
-        return jsonify({"error": "Unauthorized", "message": "User ID does not match the token."}), 401
-    
+def create_request():    
     data = request.get_json()
     if not data:
         return jsonify({"error": "InvalidInput", "message": "No input data provided."}), 400
 
-    required_fields = ["requested_tc_id", "patient_tc_id", "blood_type", "age", "gender", "location", "status"]
+    required_fields = ["requested_tc_id", "patient_tc_id", "blood_type", "age", "gender", "location", "hospital", "status"]
     for field in required_fields:
         if field not in data:
             return jsonify({"error": "InvalidInput", "message": f"The '{field}' field is required."}), 400
@@ -96,10 +100,16 @@ def create_request():
     age = data.get("age")
     gender = data.get("gender")
     note = data.get("note")
-    location = data["location"]
+    location = data["location"]              #location is a dictionary
+    hospital = data["hospital"]
     coordinates = data.get("coordinates")
     status = data["status"]
     create_time = datetime.now()
+    
+    city = location.get("city")
+    district = location.get("district")
+    lat= location.get("lat")
+    lng = location.get("lng")
 
     try:
         connection = get_db()
@@ -112,12 +122,8 @@ def create_request():
         if result[0] == 0:
             return jsonify({"error": "InvalidInput", "message": "TC_ID of requester is not found in the database."}), 400
 
-        city_name, district_name = location.split(',', 1)
-        city_name = city_name.strip()
-        district_name = district_name.strip()
-
         check_location_query = "SELECT COUNT(*) FROM Locations WHERE City_Name = %s AND District_Name = %s"
-        cursor.execute(check_location_query, (city_name, district_name + "\r"))
+        cursor.execute(check_location_query, (city, district + "\r"))
         location_result = cursor.fetchone()
 
         if location_result[0] == 0:
@@ -137,12 +143,12 @@ def create_request():
         insert_query = """
             INSERT INTO Requests (
                 Requested_TC_ID, Patient_TC_ID, Blood_Type, Age, Gender, Note,
-                Location, Coordinates, Status, Create_Time
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                Lat, Lng, City, District, Hospital, Status, Create_Time
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         values = (
             requested_tc_id, patient_tc_id, blood_type, age, gender, note,
-            location, coordinates, status, create_time
+            lat, lng, city, district, hospital, status, create_time
         )
 
         cursor.execute(insert_query, values)

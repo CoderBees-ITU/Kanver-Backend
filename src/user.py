@@ -87,7 +87,7 @@ def update_user(tc_id):
         return jsonify({"error": "InvalidInput", "message": "No input data provided."}), 400
 
     #is_eligible şimdilik dursun duruma göre değiştirebiliriz
-    updatable_fields = ["name", "surname", "email", "blood_type", "location", "last_donation_date", "is_eligible"]
+    updatable_fields = ["name", "surname", "email", "blood_type", "city", "district", "last_donation_date", "is_eligible"]
     updates = []
     values = []
 
