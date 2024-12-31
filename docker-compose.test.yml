@@ -1,38 +1,40 @@
 services:
   backend:
+    tty: true
     build:
       context: .
-      dockerfile: Dockerfile.dev
-    container_name: backend-service
+      dockerfile: Dockerfile.test
+    container_name: backend-test-service
     env_file:
       - .env
     ports:
-      - "8080:8080"
+      - "8081:8080"
     volumes:
       - .:/app
     environment:
-      - FLASK_ENV=development
-      - FLASK_DEBUG=1
+      - FLASK_ENV=test
+      - FLASK_DEBUG=0
       - DOCKER_MYSQL_PORT=3306
-      - DOCKER_MYSQL_HOST=database-service
+      - DOCKER_MYSQL_HOST=database-test-service
       - DOCKER_MYSQL_USER=kanver_user
       - DOCKER_MYSQL_PASSWORD=kanver_password
       - DOCKER_MYSQL_DB=kanver
     depends_on:
-      - database
+      database:
+        condition: service_healthy
     expose:
       - "8080"
-
+    command: pytest --disable-warnings
   database:
     image: mysql:8.0
-    container_name: database-service
+    container_name: database-test-service
     environment:
       - MYSQL_ROOT_PASSWORD=root
       - MYSQL_USER=kanver_user
       - MYSQL_PASSWORD=kanver_password
       - MYSQL_DATABASE=kanver
     ports:
-      - "3306:3306"
+      - "3307:3306"  # Use a different port for tests
     expose:
       - "3306"
     volumes:
@@ -41,6 +43,11 @@ services:
       - ./database/schema.sql:/docker-entrypoint-initdb.d/1-create_tables.sql
       - ./database/load_data.sql:/docker-entrypoint-initdb.d/2-load_data.sql
       - ./database/dataset:/var/lib/mysql-files
-
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "kanver_user", "-pkanver_password"]
+      interval: 2s
+      retries: 20
+      start_period: 10s
+      timeout: 10s
 volumes:
   mysql_data:

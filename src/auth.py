@@ -6,28 +6,21 @@ import secrets
 import firebase_admin
 import flask
 import jwt
-
+from src.models import UserRegister
+from flask_pydantic import validate
 auth_bp = Blueprint('auth', __name__)
 
 
 @auth_bp.route('/register', methods=['POST'])
-def register():
-    data = request.get_json()
-    if not data:
-        return jsonify({"message": "No input data provided"}), 400
-
-    required_fields = ["email", "password", "name", "surname", "tc", "blood_type", "birth_date"]
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"message": f"Missing field: {field}"}), 400
-
-    email = data["email"]
-    password = data["password"]
-    name = data["name"]
-    surname = data["surname"]
-    tc = data["tc"]
-    blood_type = data["blood_type"]
-    birth_date = data.get("birth_date")
+@validate()
+def register(body: UserRegister):
+    email = body.email 
+    password = body.password 
+    name = body.name 
+    surname = body.surname
+    tc = body.tc 
+    blood_type = body.blood_type
+    birth_date = body.birth_date
 
     try:
         # Connect to MySQL
