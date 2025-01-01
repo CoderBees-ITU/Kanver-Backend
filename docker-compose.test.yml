@@ -40,14 +40,18 @@ services:
     volumes:
 
       - mysql_data:/var/lib/mysql
-      - ./database/schema.sql:/docker-entrypoint-initdb.d/1-create_tables.sql
-      - ./database/load_data.sql:/docker-entrypoint-initdb.d/2-load_data.sql
+      - ./database/sql/schema.sql:/docker-entrypoint-initdb.d/1-create_tables.sql
+      - ./database/sql/load_data.sql:/docker-entrypoint-initdb.d/2-load_data.sql
+      - ./database/sql/mark_healthy.sql:/docker-entrypoint-initdb.d/3-mark_healthy.sql
       - ./database/dataset:/var/lib/mysql-files
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "kanver_user", "-pkanver_password"]
-      interval: 2s
+      test: [
+        "CMD-SHELL",
+        "mysql -h localhost -ukanver_user -pkanver_password -e \"SELECT status FROM kanver.initialization_flag WHERE status='completed' LIMIT 1\""
+      ]
+      interval: 1s
       retries: 20
-      start_period: 10s
-      timeout: 10s
+      start_period: 1s
+      timeout: 1s
 volumes:
   mysql_data:
