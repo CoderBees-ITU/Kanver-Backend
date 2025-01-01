@@ -11,6 +11,7 @@ services:
       - "8081:8080"
     volumes:
       - .:/app
+      - ./test-results:/app/test-results
     environment:
       - FLASK_ENV=test
       - FLASK_DEBUG=0
@@ -24,7 +25,7 @@ services:
         condition: service_healthy
     expose:
       - "8080"
-    command: pytest --disable-warnings
+    command: pytest --disable-warnings --junitxml=test-results.xml
   database:
     image: mysql:8.0
     container_name: database-test-service

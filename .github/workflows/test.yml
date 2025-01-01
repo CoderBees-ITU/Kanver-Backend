@@ -19,24 +19,23 @@ jobs:
         run: |
           cp .env.example .env || (echo "No .env.example found, exiting..." && exit 1)
 
-      # Step 3: Run Docker Compose
-      - name: Run tests
-        uses: hoverkraft-tech/compose-action@v2.0.1
-        with:
-          compose-file: "./docker-compose.test.yml"
-          up-flags: |
-                    --build
-                    --abort-on-container-exit
-                    --exit-code-from backend
-          down-flags: |
-                    -v
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+      
+      - name: Run Tests
+        run: |
+          docker-compose -f docker-compose.test.yml up --exit-code-from backend
+        continue-on-error: true
+        id: test_run
 
-      # Step 4: Print Backend Logs (on Failure)
-      - name: Print Backend Logs
-        if: failure()
-        run: docker logs backend-test-service
-
-      # Step 5: Clean Up
-      - name: Clean Up Docker Compose
+      - name: Publish Test Results
         if: always()
-        run: docker-compose -f docker-compose.test.yml down -v
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          junit_files: "test-results/*.xml"
+      
+      - name: Check Test Status
+        if: steps.test_run.outcome == 'failure'
+        run: exit 1
