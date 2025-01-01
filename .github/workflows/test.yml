@@ -30,3 +30,13 @@ jobs:
                     --exit-code-from backend
           down-flags: |
                     -v
+
+      # Step 4: Print Backend Logs (on Failure)
+      - name: Print Backend Logs
+        if: failure()
+        run: docker logs backend-test-service
+
+      # Step 5: Clean Up
+      - name: Clean Up Docker Compose
+        if: always()
+        run: docker-compose -f docker-compose.test.yml down -v
