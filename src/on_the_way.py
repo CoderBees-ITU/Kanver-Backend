@@ -55,7 +55,7 @@ def add_on_the_way():
         if not blood_request:
             return jsonify({"error": "NotFound", "message": "Request not found in the database."}), 404
 
-        if blood_request['Status'] != 'pending':
+        if blood_request['Status'] != 'Pending':
             return jsonify({"error": "RequestClosed", "message": "This blood request is no longer open."}), 400
 
         # Add a record to the On_The_Way table
@@ -206,6 +206,69 @@ def update_on_the_way_status(request_id):
         connection.commit()
 
         return jsonify({"message": "Status updated successfully."}), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
+
+@on_the_way_bp.route('/on_the_way/my', methods=['GET'])
+# @auth_required
+def get_on_the_way_my():
+    user_id = request.headers.get("Authorization")
+    if not user_id:
+        return jsonify({"error": "InvalidInput", "message": "Authorization header is missing."}), 400
+
+    try:
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)
+
+        # Validate user existence
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+        user = cursor.fetchone()
+
+        if not user:
+            return jsonify({"error": "InvalidInput", "message": "User ID is not found in the database."}), 400
+
+        user_tc_id = user["TC_ID"]
+
+        # Fetch requests where the user is a donor
+        query = """
+            SELECT 
+                otw.ID AS on_the_way_id,
+                otw.Status AS on_the_way_status,
+                otw.Create_Time AS on_the_way_time,
+                r.Request_ID,
+                r.Blood_Type,
+                r.City,
+                r.District,
+                r.Hospital,
+                r.patient_name,
+                r.patient_surname,
+                r.Gender,
+                r.Note,
+                r.Create_Time AS request_time
+            FROM 
+                On_The_Way otw
+            INNER JOIN 
+                Requests r ON otw.Request_ID = r.Request_ID
+            WHERE 
+                otw.Donor_TC_ID = %s
+            ORDER BY 
+                otw.Create_Time DESC
+        """
+        cursor.execute(query, (user_tc_id,))
+        requests = cursor.fetchall()
+
+        if not requests:
+            return jsonify({"error": "NotFound", "message": "No requests found for the user."}), 404
+
+        return jsonify({"requests": requests}), 200
 
     except mysql.connector.Error as err:
         return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
