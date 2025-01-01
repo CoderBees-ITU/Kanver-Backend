@@ -1,6 +1,7 @@
-import logging
 import json
+import logging
 from unittest.mock import MagicMock
+
 logger = logging.getLogger(__name__)
 payload = {
         "email": "test@example.com",
@@ -15,6 +16,7 @@ payload = {
 # Test 1 : Duplicate User Creation
 # Test 2 : User Creation with Missing Fields from UserRegister Model (Email and name missing)
 # Test 3 : User Creation with False Fields from UserRegister Model (TC = 1234)
+# Test 4 : User Creation with Extra Fields from UserRegister Model (Extra Field = "Extra")
 
 def test_user_creation_with_clean_table(client, db_connection ,truncate_table,mock_firebase):
     # Clear the table
@@ -92,3 +94,31 @@ def test_user_creation_with_false_field(client, db_connection ,truncate_table,mo
     assert response.status_code == 400, "Should return 400 bad request on validation error"
     assert "validation_error" in response_data, "Response should have validation_error"
     assert len(response_data["validation_error"]["body_params"]) == 1, "One false field needs to be detected"
+    
+def test_user_creation_with_extra_field(client, db_connection ,truncate_table,mock_firebase):
+    # Clear the table
+    truncate_table("User")
+
+    extra_payload = {k : v for k,v in payload.items() }
+    extra_payload["extra_field"] = "extra"
+        
+    # Perform user creation
+    response = client.post("/register", json=extra_payload)
+    response_data = response.get_json()
+    # logger.debug("Response Data:\n%s", json.dumps(response_data, indent=4))
+    
+    # Assert user created successfully
+    assert response.status_code == 200
+    response_data = response.get_json()
+    assert response_data["message"] == "User created successfully"
+    # Validate the database state
+    cursor = db_connection.cursor()
+    cursor.execute("SELECT * FROM User WHERE Email = %s", ("test@example.com",))
+    result = cursor.fetchone()
+    assert result is not None
+    assert result[0] == "test_user_id"
+    
+    # Assert missing fields 
+    # assert response.status_code == 400, "Should return 400 bad request on validation error"
+    # assert "validation_error" in response_data, "Response should have validation_error"
+    # assert len(response_data["validation_error"]["body_params"]) == 1, "One false field needs to be detected"
