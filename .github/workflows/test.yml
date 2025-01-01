@@ -1,0 +1,30 @@
+name: Pytest Unit Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the Code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Copy .env File (if needed)
+      - name: Copy .env File
+        run: |
+          cp .env.example .env || (echo "No .env.example found, exiting..." && exit 1)
+
+      - name: Install Docker Compose
+        run: |
+          sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+      
+      - name: Run Tests
+        run: |
+          docker-compose -f docker-compose.test.yml up --exit-code-from backend
+
