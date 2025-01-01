@@ -48,7 +48,7 @@ def test_user_already_exists(client,db_connection, truncate_table,mock_firebase)
     response_data = response.get_json()
 
     # Assert user already exists error
-    assert response.status_code == 200
+    assert response.status_code == 400
     response_data = response.get_json()
     assert response_data["message"] == "User already exists"
     # Validate the database state
