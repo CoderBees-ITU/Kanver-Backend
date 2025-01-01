@@ -47,7 +47,7 @@ try:
                 print("Command skipped: ", msg)
 
 
-    executeScriptsFromFile('./schema.sql')
+    executeScriptsFromFile('./sql/schema.sql')
     cnx.commit()
 
 except Exception as err:
