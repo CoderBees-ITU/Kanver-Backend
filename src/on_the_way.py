@@ -1,10 +1,12 @@
 from flask import Blueprint, request, jsonify
 import mysql.connector
 from database.connection import get_db
+from src.middleware import auth_required
 
 on_the_way_bp = Blueprint('on_the_way', __name__)
 
 @on_the_way_bp.route('/on_the_way', methods=['POST'])
+#@auth_required
 def add_on_the_way():
     data = request.get_json()
     user_id = request.headers.get("Authorization")
@@ -26,6 +28,13 @@ def add_on_the_way():
             return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
 
         donor_tc_id = user["TC_ID"]
+        
+        check_existing_tc_query = "SELECT Donor_TC_ID FROM On_The_Way WHERE Request_ID = %s AND Donor_TC_ID = %s"
+        cursor.execute(check_existing_tc_query, (request_id, donor_tc_id,))
+        donor_request_exists = cursor.fetchone()
+        
+        if donor_request_exists:
+            return jsonify({"error": "InvalidOnTheWay", "message": "This Donor TC ID was already used for this blood request"}), 400
 
         # Check if the donor exists and is eligible
         check_donor_query = "SELECT Is_Eligible FROM User WHERE TC_ID = %s"
@@ -69,47 +78,23 @@ def add_on_the_way():
             cursor.close()
         if connection:
             connection.close()
+
+@on_the_way_bp.route('/on_the_way/<int:request_id>', methods=['DELETE'])
+#@auth_required
+def cancel_on_the_way(request_id):
+    user_id = request.headers.get("Authorization")
+    try:
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)
         
-@on_the_way_bp.route('/on_the_way/<int:request_id>', methods=['GET'])
-def get_on_the_way_count(request_id):
-    """
-    Service to get the count of donors marked as 'On The Way' for a specific request.
-    """
-    try:
-        connection = get_db()
-        cursor = connection.cursor(dictionary=True)
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
 
-        # Query to count the number of donors 'On The Way' for the given request_id
-        query = """
-            SELECT COUNT(*) AS on_the_way_count
-            FROM On_The_Way
-            WHERE Request_ID = %s
-        """
-        cursor.execute(query, (request_id,))
-        result = cursor.fetchone()
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
 
-        if not result:
-            return jsonify({"error": "NotFound", "message": "No records found for the given request ID."}), 404
-
-        return jsonify({
-            "request_id": request_id,
-            "on_the_way_count": result['on_the_way_count']
-        }), 200
-
-    except mysql.connector.Error as err:
-        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
-
-    finally:
-        if cursor:
-            cursor.close()
-        if connection:
-            connection.close()
-
-@on_the_way_bp.route('/on_the_way/<int:request_id>/<int:donor_tc_id>', methods=['DELETE'])
-def cancel_on_the_way(request_id, donor_tc_id):
-    try:
-        connection = get_db()
-        cursor = connection.cursor(dictionary=True)
+        donor_tc_id = user["TC_ID"]
 
         # Check if the record exists in the On_The_Way table
         check_on_the_way_query = """
@@ -129,14 +114,6 @@ def cancel_on_the_way(request_id, donor_tc_id):
         """
         cursor.execute(delete_on_the_way_query, (request_id, donor_tc_id))
 
-        # Update the donor count in the Requests table
-        update_request_query = """
-            UPDATE Requests
-            SET Donor_Count = Donor_Count - 1
-            WHERE Request_ID = %s
-        """
-        cursor.execute(update_request_query, (request_id,))
-
         # Commit the changes
         connection.commit()
 
@@ -152,10 +129,8 @@ def cancel_on_the_way(request_id, donor_tc_id):
             connection.close()
 
 @on_the_way_bp.route('/on_the_way/<int:request_id>', methods=['GET'])
+#@auth_required
 def get_on_the_way(request_id):
-    """
-    Endpoint to retrieve all donors marked as "on the way" for a specific request.
-    """
     try:
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
@@ -182,12 +157,11 @@ def get_on_the_way(request_id):
         if connection:
             connection.close()
 
-@on_the_way_bp.route('/on_the_way/<int:request_id>/<int:donor_tc_id>', methods=['PUT'])
-def update_on_the_way_status(request_id, donor_tc_id):
-    """
-    Endpoint to update the status of a donor marked as "on the way."
-    """
+@on_the_way_bp.route('/on_the_way/<int:request_id>', methods=['PUT'])
+#@auth_required
+def update_on_the_way_status(request_id):
     data = request.get_json()
+    user_id = request.headers.get("Authorization")
 
     if not data or 'status' not in data:
         return jsonify({"error": "InvalidInput", "message": "Status is required."}), 400
@@ -197,6 +171,15 @@ def update_on_the_way_status(request_id, donor_tc_id):
     try:
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
+        
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
+
+        donor_tc_id = user["TC_ID"]
 
         # Update the status of the donor in the On_The_Way table
         update_query = """
@@ -209,6 +192,15 @@ def update_on_the_way_status(request_id, donor_tc_id):
         # Check if the update affected any rows
         if cursor.rowcount == 0:
             return jsonify({"error": "NotFound", "message": "No matching record found to update."}), 404
+
+        if new_status == "Donated":
+            decrement_donor_count_query = """
+                UPDATE Requests
+                SET Donor_Count = Donor_Count - 1
+                WHERE Request_ID = %s
+            """
+        
+            cursor.execute(decrement_donor_count_query, (request_id,))
 
         # Commit the changes
         connection.commit()

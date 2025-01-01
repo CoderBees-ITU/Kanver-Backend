@@ -13,7 +13,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"example@example.com\",\r\n    \"password\": \"SecurePassword123\",\r\n    \"name\": \"Ahmet\",\r\n    \"surname\": \"Mehmet\",\r\n    \"tc\": \"12345678901\",\r\n    \"blood_type\": \"A+\",\r\n    \"birth_date\": \"2003-01-01\"\r\n}",
+					"raw": "{\r\n    \"email\": \"sahinmehmetonur13@gmail.com\",\r\n    \"password\": \"SecurePassword123\",\r\n    \"name\": \"Ahmet\",\r\n    \"surname\": \"Mehmet\",\r\n    \"tc\": \"12345678986\",\r\n    \"blood_type\": \"A+\",\r\n    \"birth_date\": \"2003-01-01\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -38,44 +38,31 @@
 			"response": []
 		},
 		{
-			"name": "Check Token",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"uid\": \"\",\r\n    \"session_key\": \"\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://127.0.0.1:8080/check_token",
-					"protocol": "http",
-					"host": [
-						"127",
-						"0",
-						"0",
-						"1"
-					],
-					"port": "8080",
-					"path": [
-						"check_token"
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "Create Request",
 			"request": {
 				"method": "POST",
-				"header": [],
+				"header": [
+					{
+						"key": "userid",
+						"value": "469NO0CeyyPJmwXuEfhuCMEGzIE2",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "token",
+						"value": "eyJhbGciOiAiUlMyNTYiLCAidHlwIjogIkpXVCIsICJraWQiOiAiOTM4NGQyNDQ3MDkwNzcwMmRkODRhNDFjZDQ1NDg2ODM4NDMyMzliZiJ9.eyJpc3MiOiAiZmlyZWJhc2UtYWRtaW5zZGstYXZxY21AdGVzdC1rYW52ZXIuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCAic3ViIjogImZpcmViYXNlLWFkbWluc2RrLWF2cWNtQHRlc3Qta2FudmVyLmlhbS5nc2VydmljZWFjY291bnQuY29tIiwgImF1ZCI6ICJodHRwczovL2lkZW50aXR5dG9vbGtpdC5nb29nbGVhcGlzLmNvbS9nb29nbGUuaWRlbnRpdHkuaWRlbnRpdHl0b29sa2l0LnYxLklkZW50aXR5VG9vbGtpdCIsICJ1aWQiOiAiNDY5Tk8wQ2V5eVBKbXdYdUVmaHVDTUVHeklFMiIsICJpYXQiOiAxNzM1MDY1NDk2LCAiZXhwIjogMTczNTA2OTA5Nn0.EM0vnfUTV-9mRwRm1E_Bb0EdG3IsZcf2XwT3mkWAEAkrbG28ZzmmTYfe4HYdYVG4djXIeh0I-z7xNmpIZoFKb_8Zmhpg-Uzl0jvQR3zabBBmhKZHaZN_LSWhDUqjw0--00LqkQfen9HRxwXPH9zcxLxMy-Vrj2Y_vXNmw51M8aDyFoI05u3QqJaEqb2V4F-ed0VwJ2YOaLYvxyt4jdlUoOyEJeRUKu6iu80nA1mwgTRn9fZWec4f5Tomn3lAtkJgupJurhnch5VYqPqE4eXToDw14ofYpDh_zub8RpvQ5ttauz1El4Jykzy3bF8mNYJSnSPkO8slrbj6noe2i9jmWQ",
+						"type": "text",
+						"disabled": true
+					},
+					{
+						"key": "Authorization",
+						"value": "2eFsNNj9e4VWCiUv7pbgnOA7on83",
+						"type": "text"
+					}
+				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"requested_tc_id\": \"12345678901\",     //requested_tc_id must be registered into the database beforehand.\r\n    \"patient_tc_id\": \"1345678901\",        //patient_tc_id does not have to be registered\r\n    \"blood_type\": \"0-\",\r\n    \"age\": 21,\r\n    \"gender\": \"male\",\r\n    \"location\": \"CITY,DISTRICT\",\r\n    \"status\": \"pending\"\r\n}",
+					"raw": "{\r\n    \"patient_tc_id\": \"1345678913\",        //patient_tc_id does not have to be registered\r\n    \"blood_type\": \"0-\",\r\n    \"age\": 21,\r\n    \"gender\": \"male\",\r\n    \"location\": {\r\n    \"lat\": 37.67870449999999,\r\n    \"lng\": 37.8884509,\r\n    \"city\": \"Adiyaman\",\r\n    \"district\": \"Besni\"\r\n    },\r\n    \"hospital\": \"Besni Devlet Hastanesi\",\r\n    \"status\": \"pending\",\r\n    \"donor_count\": 5,\r\n    \"patient_name\": \"Onur\",\r\n    \"patient_surname\": \"Sahin\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -109,7 +96,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"blood_type\": \"A+\",\r\n    \"status\": \"pending\"\r\n}",
+					"raw": "",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -117,7 +104,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://127.0.0.1:8080/request",
+					"raw": "http://127.0.0.1:8080/request?city=Adiyaman",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -128,6 +115,180 @@
 					"port": "8080",
 					"path": [
 						"request"
+					],
+					"query": [
+						{
+							"key": "city",
+							"value": "Adiyaman"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update User",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"city\": \"Kayseri\",\r\n    \"district\": \"Talas\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/user/2eFsNNj9e4VWCiUv7pbgnOA7on83",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"user",
+						"2eFsNNj9e4VWCiUv7pbgnOA7on83"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create On The Way",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "2eFsNNj9e4VWCiUv7pbgnOA7on83",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"request_id\": \"1\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/on_the_way",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"on_the_way"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete On The Way",
+			"request": {
+				"method": "DELETE",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "2eFsNNj9e4VWCiUv7pbgnOA7on83",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/on_the_way/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"on_the_way",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get On The Way Users",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8080/on_the_way/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"on_the_way",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update On The Way",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "2eFsNNj9e4VWCiUv7pbgnOA7on83",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"status\": \"Donated\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/on_the_way/1",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"on_the_way",
+						"1"
 					]
 				}
 			},
