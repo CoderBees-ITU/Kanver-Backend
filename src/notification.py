@@ -56,6 +56,61 @@ def send_email(common_params, recipients):
         print(response.text)
         return None
 
+def create_notification_logic(request_id, notification_type, message, common_params, db_connection):
+    location = common_params["location"]
+    location_parts = location.split(", ")
+    district_city = location_parts[0]
+    hospital = location_parts[1]
+    district_city_parts = district_city.split("/")
+    
+    district = district_city_parts[0]
+    city = district_city_parts[1]
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+
+        # Query users with matching blood type
+        query = """
+            SELECT 
+                CONCAT(Name, ' ', Surname) AS fullName,
+                Email 
+            FROM 
+                User
+            WHERE 
+                Blood_Type = %s AND City = %s AND District = %s
+        """
+        cursor.execute(query, (common_params["blood"], city, district,))
+        tmp_recipients = cursor.fetchall()
+
+        # Prepare recipients list
+        recipients = [{"email": recipient["Email"], "name": recipient["fullName"]} for recipient in tmp_recipients]
+
+        # Insert notification into Notifications table
+        insert_query = """
+            INSERT INTO Notifications (Request_ID, Notification_Type, Message)
+            VALUES (%s, %s, %s)
+        """
+        cursor.execute(insert_query, (request_id, notification_type, message))
+        db_connection.commit()
+
+        # Get the notification ID
+        notification_id = cursor.lastrowid
+        common_params["locations"] = hospital
+
+        # Send email
+        send_email(common_params, recipients)
+
+        return {
+            "notification_id": notification_id,
+            "recipients": recipients
+        }
+
+    except Exception as e:
+        raise Exception(f"Notification error: {str(e)}")
+
+    finally:
+        cursor.close()
+
+
 
 @notification_bp.route("/create", methods=["POST"])
 def create_notification():

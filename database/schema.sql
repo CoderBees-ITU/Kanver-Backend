@@ -82,3 +82,14 @@ CREATE INDEX idx_requests_patient_tc_id ON Requests (Patient_TC_ID);
 CREATE INDEX idx_on_the_way_request_id ON On_The_Way (Request_ID);
 CREATE INDEX idx_on_the_way_donor_tc_id ON On_The_Way (Donor_TC_ID);
 CREATE INDEX idx_notifications_request_id ON Notifications (Request_ID);
+
+-- Event scheduler for updating Requests->Status automatically
+SET GLOBAL event_scheduler = ON;
+
+CREATE EVENT IF NOT EXISTS UpdateRequestStatus
+ON SCHEDULE EVERY 1 DAY
+DO
+    UPDATE Requests
+    SET Status = 'Closed'
+    WHERE Status != 'Closed'
+      AND Create_Time <= NOW() - INTERVAL 7 DAY;
