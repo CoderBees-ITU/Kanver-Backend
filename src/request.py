@@ -109,13 +109,61 @@ def get_requests():
 # auth_required will be commented out 
 # @auth_required
 def get_my_requests():
+    patient_tc_id = request.args.get("patient_tc_id")
+    blood_type = request.args.get("blood_type")
+    age = request.args.get("age")
+    gender = request.args.get("gender")
+    city = request.args.get("city")
+    district = request.args.get("district")
+    hospital = request.args.get("hospital")
+    status = request.args.get("status")
+    request_id = request.args.get("request_id")
+    
     user_id = request.headers.get("Authorization")
+    
+    filters = [None]
+    
+    select_query = "SELECT * FROM Requests WHERE Requested_TC_ID = %s"
+    
+    if patient_tc_id:
+        select_query += " AND Patient_TC_ID = %s"
+        filters.append(patient_tc_id)
+    if blood_type:
+        select_query += " AND Blood_Type = %s"
+        filters.append(blood_type.strip())
+    if age:
+        select_query += " AND Age = %s"
+        filters.append(age)
+    if gender:
+        select_query += " AND Gender = %s"
+        filters.append(gender)
+    if city:
+        select_query += " AND City = %s"
+        filters.append(city)
+    if district:
+        select_query += " AND District = %s"
+        filters.append(district)
+    if hospital:
+        select_query += " AND Hospital = %s"
+        filters.append(hospital)
+    if status:
+        select_query += " AND Status = %s"
+        filters.append(status)
+    if request_id:
+        select_query += " AND Request_ID = %s"
+        filters.append(request_id)
+        
+    select_query += " ORDER BY Create_Time DESC"
+    
+    user_id = request.headers.get("Authorization")
+    
     try:
         # Connect to the database
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
         
         check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        
         cursor.execute(check_user_query, (user_id,))
 
         user = cursor.fetchone()
@@ -123,9 +171,9 @@ def get_my_requests():
             return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
 
         user_tc_id = user["TC_ID"]
+        filters[0] = user_tc_id
 
-        select_query = "SELECT * FROM Requests WHERE Requested_TC_ID = %s"
-        cursor.execute(select_query, (user_tc_id,))
+        cursor.execute(select_query, filters)
         results = cursor.fetchall()
         
         for row in results:
@@ -147,7 +195,54 @@ def get_my_requests():
 # auth_required will be commented out 
 # @auth_required
 def get_personalized_requests():
+    patient_tc_id = request.args.get("patient_tc_id")
+    blood_type = request.args.get("blood_type")
+    age = request.args.get("age")
+    gender = request.args.get("gender")
+    city = request.args.get("city")
+    district = request.args.get("district")
+    hospital = request.args.get("hospital")
+    status = request.args.get("status")
+    request_id = request.args.get("request_id")
+    
     user_id = request.headers.get("Authorization")
+    
+    filters = []
+    
+    select_personalized_requests_query = """
+            SELECT *
+            FROM Requests
+            WHERE Status != 'closed'
+        """
+    
+    if patient_tc_id:
+        select_personalized_requests_query += " AND Patient_TC_ID = %s"
+        filters.append(patient_tc_id)
+    if blood_type:
+        select_personalized_requests_query += " AND Blood_Type = %s"
+        filters.append(blood_type.strip())
+    if age:
+        select_personalized_requests_query += " AND Age = %s"
+        filters.append(age)
+    if gender:
+        select_personalized_requests_query += " AND Gender = %s"
+        filters.append(gender)
+    if city:
+        select_personalized_requests_query += " AND City = %s"
+        filters.append(city)
+    if district:
+        select_personalized_requests_query += " AND District = %s"
+        filters.append(district)
+    if hospital:
+        select_personalized_requests_query += " AND Hospital = %s"
+        filters.append(hospital)
+    if status:
+        select_personalized_requests_query += " AND Status = %s"
+        filters.append(status)
+    if request_id:
+        select_personalized_requests_query += " AND Request_ID = %s"
+        filters.append(request_id)
+    
     try:
         # Connect to the database
         connection = get_db()
@@ -160,15 +255,12 @@ def get_personalized_requests():
         if user is None:
             return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
 
-        user_tc_id = user["TC_ID"]
+        #user_tc_id = user["TC_ID"]
         user_blood_type = user["Blood_Type"]
         user_city = user["City"]
         user_district = user["District"]
         
-        select_personalized_requests_query = """
-            SELECT *
-            FROM Requests
-            WHERE Status != 'closed'
+        select_personalized_requests_query += """
             ORDER BY
                 CASE
                     WHEN Blood_Type = %s AND City = %s AND District = %s THEN 1
@@ -179,12 +271,17 @@ def get_personalized_requests():
                     ELSE 6
                 END,
                 Create_Time DESC;
-
         """
         
-        cursor.execute(select_personalized_requests_query,
-                       (user_blood_type, user_city, user_district, user_blood_type,user_city, user_blood_type,
-                        user_city, user_district, user_city))
+        filters.extend([
+            user_blood_type, user_city, user_district,
+            user_blood_type, user_city,
+            user_blood_type,
+            user_city, user_district,
+            user_city
+        ])
+        
+        cursor.execute(select_personalized_requests_query, filters)
         
         results = cursor.fetchall()
         
