@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify
 from database.connection import get_db
+import mysql.connector
 
 import json
 import requests
@@ -136,12 +137,13 @@ def create_notification():
         # Kan grubu eşleşen alıcıları sorgula
         query = """
             SELECT 
-                CONCAT(Name, ' ', Surname) AS fullName,
-                Email
+            CONCAT(Name, ' ', Surname) AS fullName, Email
             FROM 
-                User
-            WHERE 
-                Blood_Type = %s;
+            User left join Banned_Users on
+            User.TC_ID = Banned_Users.TC_ID
+            where
+            Banned_Users.TC_ID is null and
+            Blood_Type = %s and is_Eligible=True;
         """
         cursor.execute(query, (common_params["blood"],))
         tmp_recipients = cursor.fetchall()
@@ -151,10 +153,10 @@ def create_notification():
 
         # Bildirimi Notifications tablosuna ekle
         insert_query = """
-            INSERT INTO Notifications (Request_ID, Notification_Type, Message)
-            VALUES (%s, %s, %s)
+            INSERT INTO Notifications (Request_ID, Notification_Type, Message, Total_Mail_Sent)
+            VALUES (%s, %s, %s,%s)
         """
-        cursor.execute(insert_query, (request_id, notification_type, message))
+        cursor.execute(insert_query, (request_id, notification_type, message,len(tmp_recipients)))
         connection.commit()
 
         notification_id = cursor.lastrowid
@@ -174,3 +176,26 @@ def create_notification():
         cursor.close()
         connection.close()
 
+
+@notification_bp.route("/notifications", methods=["get"])
+def get_notifications():
+    try:
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)
+
+        query = "SELECT * FROM Notifications"
+        cursor.execute(query)
+        notifications = cursor.fetchall()
+
+
+        if not notifications:
+            return jsonify({"error": "NotFound", "message": "No notifications found in the database."}), 404
+
+        return jsonify(notifications), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
