@@ -10,7 +10,6 @@ services:
       - "8080:8080"
     volumes:
       - .:/app
-    command: flask run --host=0.0.0.0 --port=8080
     environment:
       - FLASK_ENV=development
       - FLASK_DEBUG=1
@@ -33,9 +32,10 @@ services:
       - MYSQL_USER=kanver_user
       - MYSQL_PASSWORD=kanver_password
       - MYSQL_DATABASE=kanver
-    
     ports:
       - "3306:3306"
+    expose:
+      - "3306"
     volumes:
 
 
@@ -53,40 +53,6 @@ services:
       retries: 20
       start_period: 1s
       timeout: 1s
-
-  redis:
-    image: redis:7
-    container_name: redis
-    ports:
-      - "6379:6379"
-
-  celery_worker:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: celery_worker
-    volumes:
-      - ./tasks:/app/tasks
-    working_dir: /app
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-    command: celery -A tasks worker --loglevel=info
-    depends_on:
-      - redis
-
-  celery_beat:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: celery_beat
-    volumes:
-      - ./tasks:/app/tasks
-    working_dir: /app
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-    command: celery -A tasks beat --loglevel=debug
-    depends_on:
-      - redis
 
 volumes:
   mysql_data:
