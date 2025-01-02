@@ -55,20 +55,20 @@ def add_on_the_way():
         if not blood_request:
             return jsonify({"error": "NotFound", "message": "Request not found in the database."}), 404
 
-        if blood_request['Status'] != 'Pending':
+        if blood_request['Status'] != 'pending':
             return jsonify({"error": "RequestClosed", "message": "This blood request is no longer open."}), 400
 
         # Add a record to the On_The_Way table
         insert_on_the_way_query = """
             INSERT INTO On_The_Way (Request_ID, Donor_TC_ID, Status)
-            VALUES (%s, %s, 'On The Way')
+            VALUES (%s, %s, 'on_the_way')
         """
         cursor.execute(insert_on_the_way_query, (request_id, donor_tc_id))
 
         # Commit the changes
         connection.commit()
 
-        return jsonify({"message": "Donor successfully marked as on the way."}), 201
+        return jsonify({"message": "Donor successfully marked as on the way."}), 200
 
     except mysql.connector.Error as err:
         return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
