@@ -127,6 +127,9 @@ def get_my_requests():
         select_query = "SELECT * FROM Requests WHERE Requested_TC_ID = %s"
         cursor.execute(select_query, (user_tc_id,))
         results = cursor.fetchall()
+        
+        for row in results:
+            row['Create_Time'] = row['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
 
         # Return the results as JSON
         return jsonify(results), 200
@@ -184,6 +187,9 @@ def get_personalized_requests():
                         user_city, user_district, user_city))
         
         results = cursor.fetchall()
+        
+        for row in results:
+            row['Create_Time'] = row['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
 
         # Return the results as JSON
         return jsonify(results), 200

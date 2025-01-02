@@ -61,7 +61,7 @@ def add_on_the_way():
         # Add a record to the On_The_Way table
         insert_on_the_way_query = """
             INSERT INTO On_The_Way (Request_ID, Donor_TC_ID, Status)
-            VALUES (%s, %s, 'On_The_Way')
+            VALUES (%s, %s, 'on_the_way')
         """
         cursor.execute(insert_on_the_way_query, (request_id, donor_tc_id))
 
