@@ -54,5 +54,39 @@ services:
       start_period: 1s
       timeout: 1s
 
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  celery_worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: celery_worker
+    volumes:
+      - ./tasks:/app/tasks
+    working_dir: /app
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    command: celery -A tasks worker --loglevel=info
+    depends_on:
+      - redis
+
+  celery_beat:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: celery_beat
+    volumes:
+      - ./tasks:/app/tasks
+    working_dir: /app
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+    command: celery -A tasks beat --loglevel=debug
+    depends_on:
+      - redis
+
 volumes:
   mysql_data:
