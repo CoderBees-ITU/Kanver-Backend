@@ -13,7 +13,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"sahinmehmetonur13@gmail.com\",\r\n    \"password\": \"SecurePassword123\",\r\n    \"name\": \"Ahmet\",\r\n    \"surname\": \"Mehmet\",\r\n    \"tc\": \"12345678986\",\r\n    \"blood_type\": \"A+\",\r\n    \"birth_date\": \"2003-01-01\"\r\n}",
+					"raw": "{\r\n    \"email\": \"sahinmehmetonur390@gmail.com\",\r\n    \"password\": \"SecurePassword123\",\r\n    \"name\": \"Ahmet\",\r\n    \"surname\": \"Mehmet\",\r\n    \"tc\": \"12345678957\",\r\n    \"blood_type\": \"A+\",\r\n    \"birth_date\": \"2003-01-01\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -56,13 +56,13 @@
 					},
 					{
 						"key": "Authorization",
-						"value": "2eFsNNj9e4VWCiUv7pbgnOA7on83",
+						"value": "KrMonifP7DMhoqDPq29KSymRLR72",
 						"type": "text"
 					}
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"patient_tc_id\": \"1345678913\",        //patient_tc_id does not have to be registered\r\n    \"blood_type\": \"0-\",\r\n    \"age\": 21,\r\n    \"gender\": \"male\",\r\n    \"location\": {\r\n    \"lat\": 37.67870449999999,\r\n    \"lng\": 37.8884509,\r\n    \"city\": \"Adiyaman\",\r\n    \"district\": \"Besni\"\r\n    },\r\n    \"hospital\": \"Besni Devlet Hastanesi\",\r\n    \"status\": \"pending\",\r\n    \"donor_count\": 5,\r\n    \"patient_name\": \"Onur\",\r\n    \"patient_surname\": \"Sahin\"\r\n}",
+					"raw": "{\r\n    \"patient_tc_id\": \"1345678913\",        //patient_tc_id does not have to be registered\r\n    \"blood_type\": \"0-\",\r\n    \"age\": 21,\r\n    \"gender\": \"male\",\r\n    \"location\": {\r\n    \"lat\": 37.67870449999999,\r\n    \"lng\": 37.8884509,\r\n    \"city\": \"Kayseri\",\r\n    \"district\": \"Talas\"\r\n    },\r\n    \"hospital\": \"Meynebim Hastanesi\",\r\n    \"status\": \"pending\",\r\n    \"donor_count\": 5,\r\n    \"patient_name\": \"Onur\",\r\n    \"patient_surname\": \"Sahin\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -93,7 +93,13 @@
 			},
 			"request": {
 				"method": "GET",
-				"header": [],
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "KrMonifP7DMhoqDPq29KSymRLR72",
+						"type": "text"
+					}
+				],
 				"body": {
 					"mode": "raw",
 					"raw": "",
@@ -104,7 +110,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://127.0.0.1:8080/request?city=Adiyaman",
+					"raw": "http://127.0.0.1:8080/request",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -115,12 +121,6 @@
 					"port": "8080",
 					"path": [
 						"request"
-					],
-					"query": [
-						{
-							"key": "city",
-							"value": "Adiyaman"
-						}
 					]
 				}
 			},
@@ -141,7 +141,7 @@
 					}
 				},
 				"url": {
-					"raw": "http://127.0.0.1:8080/user/2eFsNNj9e4VWCiUv7pbgnOA7on83",
+					"raw": "http://127.0.0.1:8080/user/6gkEsjUvUwdnYZdAiFmy5qVjlR62",
 					"protocol": "http",
 					"host": [
 						"127",
@@ -152,7 +152,7 @@
 					"port": "8080",
 					"path": [
 						"user",
-						"2eFsNNj9e4VWCiUv7pbgnOA7on83"
+						"6gkEsjUvUwdnYZdAiFmy5qVjlR62"
 					]
 				}
 			},
@@ -165,7 +165,7 @@
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "2eFsNNj9e4VWCiUv7pbgnOA7on83",
+						"value": "KrMonifP7DMhoqDPq29KSymRLR72",
 						"type": "text"
 					}
 				],
@@ -202,7 +202,7 @@
 				"header": [
 					{
 						"key": "Authorization",
-						"value": "2eFsNNj9e4VWCiUv7pbgnOA7on83",
+						"value": "KrMonifP7DMhoqDPq29KSymRLR72",
 						"type": "text"
 					}
 				],
@@ -289,6 +289,87 @@
 					"path": [
 						"on_the_way",
 						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get My Requests",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "KrMonifP7DMhoqDPq29KSymRLR72",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/request/my_requests",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"request",
+						"my_requests"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Personalized Requests",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "lDnSNBEbNOc6KItD5RuJSahwxuy1",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://localhost:8080/request/personalized",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"request",
+						"personalized"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get My On The Way",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "6gkEsjUvUwdnYZdAiFmy5qVjlR62",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8080/on_the_way/my",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"on_the_way",
+						"my"
 					]
 				}
 			},

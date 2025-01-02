@@ -90,6 +90,6 @@ CREATE EVENT IF NOT EXISTS UpdateRequestStatus
 ON SCHEDULE EVERY 1 DAY
 DO
     UPDATE Requests
-    SET Status = 'Closed'
-    WHERE Status != 'Closed'
+    SET Status = 'closed'
+    WHERE Status != 'closed'
       AND Create_Time <= NOW() - INTERVAL 7 DAY;

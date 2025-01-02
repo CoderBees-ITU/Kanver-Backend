@@ -21,10 +21,18 @@ def get_requests():
     hospital = request.args.get("hospital")
     status = request.args.get("status")
     request_id = request.args.get("request_id")
+    user_id = request.headers.get("Authorization")
 
     # Start building the query
-    query = "SELECT * FROM Requests WHERE 1=1"
-    filters = []
+    query = """
+        SELECT * FROM Requests 
+        WHERE Request_ID NOT IN (
+            SELECT Request_ID 
+            FROM On_The_Way 
+            WHERE Donor_TC_ID = %s
+        )
+    """
+    filters = [None]
 
     # Add filters based on available parameters
     if requested_tc_id:
@@ -57,13 +65,24 @@ def get_requests():
     if request_id:
         query += " AND Request_ID = %s"
         filters.append(request_id)
-
+        
     query += " ORDER BY Create_Time DESC"
 
     try:
         # Connect to the database
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
+        
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
+
+        donor_tc_id = user["TC_ID"]
+        filters[0] = donor_tc_id
+        
         cursor.execute(query, filters)
         results = cursor.fetchall()
 
@@ -146,7 +165,7 @@ def get_personalized_requests():
         select_personalized_requests_query = """
             SELECT *
             FROM Requests
-            WHERE Status != 'Closed'
+            WHERE Status != 'closed'
             ORDER BY
                 CASE
                     WHEN Blood_Type = %s AND City = %s AND District = %s THEN 1
