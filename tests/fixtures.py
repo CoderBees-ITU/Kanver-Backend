@@ -46,7 +46,7 @@ def mock_firebase(monkeypatch):
 #  Database related fixtures
 import pytest
 import os 
-from database.connection import get_db
+from database.helper import get_db_with_config
 from mysql.connector.cursor import MySQLCursorDict
 def get_configs():
     config = {}
@@ -69,7 +69,7 @@ def db_connection(db_config):
     """
     Provide a database connection for tests.
     """
-    connection = get_db(config=db_config)
+    connection = get_db_with_config(db_config)
     connection.cursor_class = MySQLCursorDict  # Set cursor to return dictionaries
     yield connection
     connection.close()
