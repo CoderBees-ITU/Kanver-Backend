@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request
 import mysql.connector
 from database.connection import get_db
 from src.middleware import auth_required
+from src.notification import create_notification_logic
 
 request_bp = Blueprint('request', __name__)
 
@@ -72,6 +73,98 @@ def get_requests():
         # Return the results as JSON
         return jsonify(results), 200
 
+
+        # Return the results as JSON
+        return jsonify(results), 200
+
+    except mysql.connector.Error as err:
+        # Handle database errors
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        # Ensure cursor and connection are closed
+        cursor.close()
+        connection.close()
+        
+@request_bp.route("/request/my_requests", methods=["GET"])
+# auth_required will be commented out 
+# @auth_required
+def get_my_requests():
+    user_id = request.headers.get("Authorization")
+    try:
+        # Connect to the database
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)
+        
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
+
+        user_tc_id = user["TC_ID"]
+
+        select_query = "SELECT * FROM Requests WHERE Requested_TC_ID = %s"
+        cursor.execute(select_query, (user_tc_id,))
+        results = cursor.fetchall()
+
+        # Return the results as JSON
+        return jsonify(results), 200
+
+    except mysql.connector.Error as err:
+        # Handle database errors
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        # Ensure cursor and connection are closed
+        cursor.close()
+        connection.close()
+    
+@request_bp.route("/request/personalized", methods=["GET"])
+# auth_required will be commented out 
+# @auth_required
+def get_personalized_requests():
+    user_id = request.headers.get("Authorization")
+    try:
+        # Connect to the database
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)
+        
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
+
+        user_tc_id = user["TC_ID"]
+        user_blood_type = user["Blood_Type"]
+        user_city = user["City"]
+        user_district = user["District"]
+        
+        select_personalized_requests_query = """
+            SELECT *
+            FROM Requests
+            WHERE Status != 'Closed'
+            ORDER BY
+                CASE
+                    WHEN Blood_Type = %s AND City = %s AND District = %s THEN 1
+                    WHEN Blood_Type = %s AND City = %s THEN 2
+                    WHEN Blood_Type = %s THEN 3
+                    WHEN City = %s AND District = %s THEN 4
+                    WHEN City = %s THEN 5
+                    ELSE 6
+                END,
+                Create_Time DESC;
+
+        """
+        
+        cursor.execute(select_personalized_requests_query,
+                       (user_blood_type, user_city, user_district, user_blood_type,user_city, user_blood_type,
+                        user_city, user_district, user_city))
+        
+        results = cursor.fetchall()
 
         # Return the results as JSON
         return jsonify(results), 200
@@ -182,10 +275,22 @@ def create_request():
             lat, lng, city, district, hospital, status, create_time, donor_count, patient_name, patient_surname
         )
 
-        cursor.execute(insert_query, values)
-        connection.commit()
+        cursor.execute(insert_query, values)  
+        
+        request_id = cursor.lastrowid
+        notification_type = "Blood Request"
+        message = f"Urgent blood request for {patient_name} {patient_surname}"
+        common_params = {"blood": blood_type, "location": district + "/" + city + ", " + hospital, "timeout": "24 saat içinde", "contact": "kanver400@gmail.com"}
 
-        return jsonify({"message": "Request created successfully", "request_id": cursor.lastrowid}), 200
+        notification_result = create_notification_logic(request_id, notification_type, message, common_params, connection)
+
+        connection.commit()  
+        
+        return jsonify({
+            "message": "Request created and notification sent successfully.",
+            "request_id": request_id,
+            "notification_id": notification_result["notification_id"]
+        }), 200
 
     except mysql.connector.Error as err:
         return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
