@@ -25,8 +25,16 @@ def get_requests():
 
     # Start building the query
     query = """
-        SELECT * FROM Requests 
-        WHERE Request_ID NOT IN (
+        WITH OnTheWayCount AS (
+            SELECT Request_ID, COUNT(*) AS On_The_Way_Count
+            FROM On_The_Way 
+            GROUP BY Request_ID
+        )
+        SELECT R.*, 
+               COALESCE(OTW.On_The_Way_Count, 0) AS On_The_Way_Count
+        FROM Requests R
+        LEFT JOIN OnTheWayCount OTW ON R.Request_ID = OTW.Request_ID
+        WHERE R.Request_ID NOT IN (
             SELECT Request_ID 
             FROM On_The_Way 
             WHERE Donor_TC_ID = %s
@@ -36,37 +44,37 @@ def get_requests():
 
     # Add filters based on available parameters
     if requested_tc_id:
-        query += " AND Requested_TC_ID = %s"
+        query += " AND R.Requested_TC_ID = %s"
         filters.append(requested_tc_id)
     if patient_tc_id:
-        query += " AND Patient_TC_ID = %s"
+        query += " AND R.Patient_TC_ID = %s"
         filters.append(patient_tc_id)
     if blood_type:
-        query += " AND Blood_Type = %s"
+        query += " AND R.Blood_Type = %s"
         filters.append(blood_type.strip())
     if age:
-        query += " AND Age = %s"
+        query += " AND R.Age = %s"
         filters.append(age)
     if gender:
-        query += " AND Gender = %s"
+        query += " AND R.Gender = %s"
         filters.append(gender)
     if city:
-        query += " AND City = %s"
+        query += " AND R.City = %s"
         filters.append(city)
     if district:
-        query += " AND District = %s"
+        query += " AND R.District = %s"
         filters.append(district)
     if hospital:
-        query += " AND Hospital = %s"
+        query += " AND R.Hospital = %s"
         filters.append(hospital)
     if status:
-        query += " AND Status = %s"
+        query += " AND R.Status = %s"
         filters.append(status)
     if request_id:
-        query += " AND Request_ID = %s"
+        query += " AND R.Request_ID = %s"
         filters.append(request_id)
         
-    query += " ORDER BY Create_Time DESC"
+    query += " GROUP BY R.Request_ID ORDER BY R.Create_Time DESC"
 
     try:
         # Connect to the database
@@ -92,10 +100,6 @@ def get_requests():
         # Return the results as JSON
         return jsonify(results), 200
 
-
-        # Return the results as JSON
-        return jsonify(results), 200
-
     except mysql.connector.Error as err:
         # Handle database errors
         return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
@@ -104,6 +108,7 @@ def get_requests():
         # Ensure cursor and connection are closed
         cursor.close()
         connection.close()
+
         
 @request_bp.route("/request/my_requests", methods=["GET"])
 # auth_required will be commented out 
@@ -123,47 +128,57 @@ def get_my_requests():
     
     filters = [None]
     
-    select_query = "SELECT * FROM Requests WHERE Requested_TC_ID = %s"
+    # Use CTE to calculate On_The_Way_Count
+    select_query = """
+        WITH OnTheWayCount AS (
+            SELECT Request_ID, COUNT(*) AS On_The_Way_Count
+            FROM On_The_Way
+            GROUP BY Request_ID
+        )
+        SELECT R.*, 
+               COALESCE(OTW.On_The_Way_Count, 0) AS On_The_Way_Count
+        FROM Requests R
+        LEFT JOIN OnTheWayCount OTW ON R.Request_ID = OTW.Request_ID
+        WHERE R.Requested_TC_ID = %s
+    """
     
     if patient_tc_id:
-        select_query += " AND Patient_TC_ID = %s"
+        select_query += " AND R.Patient_TC_ID = %s"
         filters.append(patient_tc_id)
     if blood_type:
-        select_query += " AND Blood_Type = %s"
+        select_query += " AND R.Blood_Type = %s"
         filters.append(blood_type.strip())
     if age:
-        select_query += " AND Age = %s"
+        select_query += " AND R.Age = %s"
         filters.append(age)
     if gender:
-        select_query += " AND Gender = %s"
+        select_query += " AND R.Gender = %s"
         filters.append(gender)
     if city:
-        select_query += " AND City = %s"
+        select_query += " AND R.City = %s"
         filters.append(city)
     if district:
-        select_query += " AND District = %s"
+        select_query += " AND R.District = %s"
         filters.append(district)
     if hospital:
-        select_query += " AND Hospital = %s"
+        select_query += " AND R.Hospital = %s"
         filters.append(hospital)
     if status:
-        select_query += " AND Status = %s"
+        select_query += " AND R.Status = %s"
         filters.append(status)
     if request_id:
-        select_query += " AND Request_ID = %s"
+        select_query += " AND R.Request_ID = %s"
         filters.append(request_id)
         
-    select_query += " ORDER BY Create_Time DESC"
-    
-    user_id = request.headers.get("Authorization")
+    select_query += " ORDER BY R.Create_Time DESC"
     
     try:
         # Connect to the database
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
         
+        # Check if user exists
         check_user_query = "SELECT * FROM User WHERE user_id = %s"
-        
         cursor.execute(check_user_query, (user_id,))
 
         user = cursor.fetchone()
@@ -173,9 +188,11 @@ def get_my_requests():
         user_tc_id = user["TC_ID"]
         filters[0] = user_tc_id
 
+        # Execute the main query
         cursor.execute(select_query, filters)
         results = cursor.fetchall()
         
+        # Format the Create_Time column
         for row in results:
             row['Create_Time'] = row['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
 
@@ -190,6 +207,7 @@ def get_my_requests():
         # Ensure cursor and connection are closed
         cursor.close()
         connection.close()
+
     
 @request_bp.route("/request/personalized", methods=["GET"])
 # auth_required will be commented out 
@@ -207,40 +225,55 @@ def get_personalized_requests():
     
     user_id = request.headers.get("Authorization")
     
-    filters = []
-    
+    filters = [None, None]
+
+    # Use CTE to calculate On_The_Way_Count
     select_personalized_requests_query = """
-            SELECT *
-            FROM Requests
-            WHERE Status != 'closed'
-        """
+        WITH OnTheWayCount AS (
+            SELECT Request_ID, COUNT(*) AS On_The_Way_Count
+            FROM On_The_Way
+            GROUP BY Request_ID
+        )
+        SELECT R.*, 
+               COALESCE(OTW.On_The_Way_Count, 0) AS On_The_Way_Count
+        FROM Requests R
+        LEFT JOIN OnTheWayCount OTW ON R.Request_ID = OTW.Request_ID
+        WHERE R.Status != 'closed'
+          AND R.Requested_TC_ID != %s
+          AND NOT EXISTS (
+              SELECT 1
+              FROM On_The_Way O
+              WHERE O.Request_ID = R.Request_ID
+                AND O.Donor_TC_ID = %s
+          )
+    """
     
     if patient_tc_id:
-        select_personalized_requests_query += " AND Patient_TC_ID = %s"
+        select_personalized_requests_query += " AND R.Patient_TC_ID = %s"
         filters.append(patient_tc_id)
     if blood_type:
-        select_personalized_requests_query += " AND Blood_Type = %s"
+        select_personalized_requests_query += " AND R.Blood_Type = %s"
         filters.append(blood_type.strip())
     if age:
-        select_personalized_requests_query += " AND Age = %s"
+        select_personalized_requests_query += " AND R.Age = %s"
         filters.append(age)
     if gender:
-        select_personalized_requests_query += " AND Gender = %s"
+        select_personalized_requests_query += " AND R.Gender = %s"
         filters.append(gender)
     if city:
-        select_personalized_requests_query += " AND City = %s"
+        select_personalized_requests_query += " AND R.City = %s"
         filters.append(city)
     if district:
-        select_personalized_requests_query += " AND District = %s"
+        select_personalized_requests_query += " AND R.District = %s"
         filters.append(district)
     if hospital:
-        select_personalized_requests_query += " AND Hospital = %s"
+        select_personalized_requests_query += " AND R.Hospital = %s"
         filters.append(hospital)
     if status:
-        select_personalized_requests_query += " AND Status = %s"
+        select_personalized_requests_query += " AND R.Status = %s"
         filters.append(status)
     if request_id:
-        select_personalized_requests_query += " AND Request_ID = %s"
+        select_personalized_requests_query += " AND R.Request_ID = %s"
         filters.append(request_id)
     
     try:
@@ -255,22 +288,26 @@ def get_personalized_requests():
         if user is None:
             return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
 
-        #user_tc_id = user["TC_ID"]
         user_blood_type = user["Blood_Type"]
         user_city = user["City"]
         user_district = user["District"]
+        user_tc_id = user["TC_ID"]
         
+        filters[0] = user_tc_id
+        filters[1] = user_tc_id
+        
+        # Adding ordering logic for personalized results
         select_personalized_requests_query += """
             ORDER BY
                 CASE
-                    WHEN Blood_Type = %s AND City = %s AND District = %s THEN 1
-                    WHEN Blood_Type = %s AND City = %s THEN 2
-                    WHEN Blood_Type = %s THEN 3
-                    WHEN City = %s AND District = %s THEN 4
-                    WHEN City = %s THEN 5
+                    WHEN R.Blood_Type = %s AND R.City = %s AND R.District = %s THEN 1
+                    WHEN R.Blood_Type = %s AND R.City = %s THEN 2
+                    WHEN R.Blood_Type = %s THEN 3
+                    WHEN R.City = %s AND R.District = %s THEN 4
+                    WHEN R.City = %s THEN 5
                     ELSE 6
                 END,
-                Create_Time DESC;
+                R.Create_Time DESC;
         """
         
         filters.extend([
@@ -281,10 +318,12 @@ def get_personalized_requests():
             user_city
         ])
         
+        # Execute the query with filters
         cursor.execute(select_personalized_requests_query, filters)
         
         results = cursor.fetchall()
         
+        # Format the Create_Time column
         for row in results:
             row['Create_Time'] = row['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
 
@@ -299,6 +338,7 @@ def get_personalized_requests():
         # Ensure cursor and connection are closed
         cursor.close()
         connection.close()
+
 
 @request_bp.route("/request", methods=["POST"])
 # @auth_required
