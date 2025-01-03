@@ -1,4 +1,4 @@
-from database.connection import get_db
+from database.helper import get_db_with_config
 
 def get_users_that_needs_update(config, batch_size=100):
     """
@@ -12,7 +12,7 @@ def get_users_that_needs_update(config, batch_size=100):
         A list of user dictionaries in each batch.
     """
     try:
-        connection = get_db(config)
+        connection = get_db_with_config(config)
         cursor = connection.cursor(dictionary=True)
         
         query = """
@@ -34,7 +34,6 @@ def get_users_that_needs_update(config, batch_size=100):
         cursor.close()
         connection.close()
         
-from database.connection import get_db
 
 def update_users_to_set_eligiblity(users, config):
     """
@@ -45,7 +44,7 @@ def update_users_to_set_eligiblity(users, config):
         config: The database configuration object.
     """
     try:
-        connection = get_db(config)
+        connection = get_db_with_config(config)
         cursor = connection.cursor()
 
         update_query = """

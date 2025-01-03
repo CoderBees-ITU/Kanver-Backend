@@ -12,7 +12,13 @@ services:
     container_name: celery_worker
     volumes:
       - ./tasks:/app/tasks
-    command: celery -A tasks.tasks.py worker --loglevel=info
+    command: celery -A tasks.tasks worker --loglevel=info
+    environment:
+      - DOCKER_MYSQL_PORT=3306
+      - DOCKER_MYSQL_HOST=database-service
+      - DOCKER_MYSQL_USER=kanver_user
+      - DOCKER_MYSQL_PASSWORD=kanver_password
+      - DOCKER_MYSQL_DB=kanver
     depends_on:
       - redis
 
@@ -23,6 +29,6 @@ services:
     container_name: celery_beat
     volumes:
       - ./tasks:/app/tasks
-    command: celery -A tasks.tasks.py beat --loglevel=info
+    command: celery -A tasks.tasks beat --loglevel=info
     depends_on:
       - redis

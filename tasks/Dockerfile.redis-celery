@@ -6,7 +6,7 @@ WORKDIR /app
 
 # Copy only necessary files
 COPY tasks/ /app/tasks/
-COPY database/connection.py /app/database/connection.py
+COPY database/helper.py /app/database/helper.py
 COPY .env.example /app/.env
 # Install dependencies
 RUN pip install --no-cache-dir -r tasks/requirements.txt
