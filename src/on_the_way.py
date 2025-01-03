@@ -160,6 +160,111 @@ def get_on_the_way(request_id):
             cursor.close()
         if connection:
             connection.close()
+        
+@on_the_way_bp.route('/on_the_way/my', methods=['GET'])
+# @auth_required
+def get_my_on_the_way_requests():
+    # Retrieve filter parameters from query arguments
+    patient_tc_id = request.args.get("patient_tc_id")
+    blood_type = request.args.get("blood_type")
+    age = request.args.get("age")
+    gender = request.args.get("gender")
+    city = request.args.get("city")
+    district = request.args.get("district")
+    hospital = request.args.get("hospital")
+    status = request.args.get("status")
+    request_id = request.args.get("request_id")
+
+    # Retrieve the user_id from Authorization header
+    user_id = request.headers.get("Authorization")
+    if not user_id:
+        return jsonify({"error": "InvalidInput", "message": "User ID is required."}), 400
+
+    try:
+        # Connect to the database
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)
+
+        # Verify if the user exists and retrieve user_tc_id
+        check_user_query = "SELECT TC_ID FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "User ID not found in the database."}), 400
+        user_tc_id = user["TC_ID"]
+
+        # Base query to fetch requests and associated on_the_way records
+        query = """
+            SELECT 
+                Requests.*, 
+                On_The_Way.* 
+            FROM 
+                On_The_Way
+            INNER JOIN 
+                Requests 
+            ON 
+                On_The_Way.Request_ID = Requests.Request_ID
+            WHERE 
+                On_The_Way.Donor_TC_ID = %s
+        """
+        filters = [user_tc_id]
+
+        # Add dynamic filters to the query
+        if patient_tc_id:
+            query += " AND Requests.Patient_TC_ID = %s"
+            filters.append(patient_tc_id)
+        if blood_type:
+            query += " AND Requests.Blood_Type = %s"
+            filters.append(blood_type.strip())
+        if age:
+            query += " AND Requests.Age = %s"
+            filters.append(age)
+        if gender:
+            query += " AND Requests.Gender = %s"
+            filters.append(gender)
+        if city:
+            query += " AND Requests.City = %s"
+            filters.append(city)
+        if district:
+            query += " AND Requests.District = %s"
+            filters.append(district)
+        if hospital:
+            query += " AND Requests.Hospital = %s"
+            filters.append(hospital)
+        if status:
+            query += " AND Requests.Status = %s"
+            filters.append(status)
+        if request_id:
+            query += " AND Requests.Request_ID = %s"
+            filters.append(request_id)
+
+        # Add sorting
+        query += " ORDER BY Requests.Create_Time DESC"
+
+        # Execute the query
+        cursor.execute(query, filters)
+        records = cursor.fetchall()
+
+        if not records:
+            return jsonify({"error": "NotFound", "message": "No requests found for the given user."}), 404
+
+        # Format the Create_Time column for each record
+        for record in records:
+            if 'Create_Time' in record and record['Create_Time']:
+                record['Create_Time'] = record['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
+
+        return jsonify(records), 200
+
+    except mysql.connector.Error as err:
+        # Handle database errors
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        # Ensure the cursor and connection are properly closed
+        if cursor:
+            cursor.close()
+        if connection:
+            connection.close()
 
 @on_the_way_bp.route('/on_the_way/<int:request_id>', methods=['PUT'])
 #@auth_required
