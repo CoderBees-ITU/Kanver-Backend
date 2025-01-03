@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify
 import mysql.connector
 from database.connection import get_db
 from src.middleware import auth_required
+from src.notification import create_notification_logic_on_the_way
 
 on_the_way_bp = Blueprint('on_the_way', __name__)
 
@@ -64,10 +65,13 @@ def add_on_the_way():
             VALUES (%s, %s, 'on_the_way')
         """
         cursor.execute(insert_on_the_way_query, (request_id, donor_tc_id))
-
-        # Commit the changes
         connection.commit()
-
+        
+        on_the_way_id = cursor.lastrowid
+        notification_type="on the way"
+        message = f"{user['Name']} {user['Surname']} {request_id} id'li istek için yola çıktı"
+        
+        create_notification_logic_on_the_way(on_the_way_id,notification_type,message,connection)
         return jsonify({"message": "Donor successfully marked as on the way."}), 200
 
     except mysql.connector.Error as err:

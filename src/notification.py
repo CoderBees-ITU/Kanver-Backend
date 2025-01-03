@@ -11,9 +11,8 @@ notification_bp = Blueprint("notification", __name__)
 API_KEY = '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'
 SENDER_EMAIL = "kul3562@gmail.com"
 SENDER_NAME = "KANVER"
-TEMPLATE_ID = 2 
 
-def send_email(common_params, recipients):
+def send_email(common_params, recipients,templa_id):
     """
     Brevo API ile toplu e-posta gönderimi yapan fonksiyon.
     
@@ -34,7 +33,7 @@ def send_email(common_params, recipients):
             "email": SENDER_EMAIL,
             "name": SENDER_NAME
         },
-        "templateId": TEMPLATE_ID,
+        "templateId": templa_id,
         "messageVersions": message_versions
     }
 
@@ -68,16 +67,19 @@ def create_notification_logic(request_id, notification_type, message, common_par
     city = district_city_parts[1]
     try:
         cursor = db_connection.cursor(dictionary=True)
-
+ 
         # Query users with matching blood type
         query = """
             SELECT 
                 CONCAT(Name, ' ', Surname) AS fullName,
                 Email 
             FROM 
-                User
+                User left join Banned_Users on
+                User.TC_ID = Banned_Users.TC_ID
             WHERE 
+                Banned_Users.TC_ID is null and
                 Blood_Type = %s AND City = %s AND District = %s
+                and is_Eligible=True;
         """
         cursor.execute(query, (common_params["blood"], city, district,))
         tmp_recipients = cursor.fetchall()
@@ -87,10 +89,10 @@ def create_notification_logic(request_id, notification_type, message, common_par
 
         # Insert notification into Notifications table
         insert_query = """
-            INSERT INTO Notifications (Request_ID, Notification_Type, Message)
-            VALUES (%s, %s, %s)
+            INSERT INTO Notifications (Request_ID, Notification_Type, Message,Total_Mail_Sent)
+            VALUES (%s, %s, %s, %s)
         """
-        cursor.execute(insert_query, (request_id, notification_type, message))
+        cursor.execute(insert_query, (request_id, notification_type, message,len(recipients)))
         db_connection.commit()
 
         # Get the notification ID
@@ -98,7 +100,7 @@ def create_notification_logic(request_id, notification_type, message, common_par
         common_params["locations"] = hospital
 
         # Send email
-        send_email(common_params, recipients)
+        send_email(common_params, recipients,2)
 
         return {
             "notification_id": notification_id,
@@ -111,6 +113,81 @@ def create_notification_logic(request_id, notification_type, message, common_par
     finally:
         cursor.close()
 
+def create_notification_logic_on_the_way(on_the_way_id, notification_type, message, db_connection):
+    """
+    'On The Way' butonuna tıklama sonrası bildirim ve e-posta işlemlerini yönetir.
+
+    Args:
+        on_the_way_id (int): On_The_Way tablosundaki ID.
+        notification_type (str): Bildirim türü (ör. "OnTheWay").
+        message (str): Bildirim mesajı.
+        db_connection: Veritabanı bağlantı nesnesi.
+
+    Returns:
+        dict: Bildirim ID'si ve alıcılar hakkında bilgi.
+    """
+    try:
+        cursor = db_connection.cursor(dictionary=True)
+
+        # On_The_Way kaydını al
+        query = """
+            SELECT ow.Request_ID, r.Blood_Type, r.Hospital, r.City, r.District,
+                   CONCAT(u1.Name, ' ', u1.Surname) AS DonorName,
+                   u2.Name AS RequesterName, u2.Surname AS RequesterSurname, u2.Email AS RequesterEmail
+            FROM On_The_Way ow
+            JOIN Requests r ON ow.Request_ID = r.Request_ID
+            JOIN User u1 ON ow.Donor_TC_ID = u1.TC_ID
+            JOIN User u2 ON r.Requested_TC_ID = u2.TC_ID
+            WHERE ow.ID = %s
+        """
+        cursor.execute(query, (on_the_way_id,))
+        result = cursor.fetchone()
+
+        if not result:
+            raise Exception("On_The_Way kaydı bulunamadı.")
+
+        # Bildirim bilgileri hazırlama
+        request_id = result["Request_ID"]
+        hospital = result["Hospital"]
+        city = result["City"]
+        district = result["District"]
+
+        common_params = {
+            "blood": result["Blood_Type"],
+            "locations": f"{district}/{city}, {hospital}",
+            "donorName": result["DonorName"],
+            "contact": "+90 552 248 13 95"
+            
+        }
+
+        # Alıcı bilgileri
+        recipients = [
+            {"email": result["RequesterEmail"], "name": f"{result['RequesterName']} {result['RequesterSurname']}"}
+        ]
+
+        # Bildirimi Notifications tablosuna ekle
+        insert_query = """
+            INSERT INTO Notifications (Request_ID, Notification_Type, Message,Total_Mail_Sent)
+            VALUES (%s, %s, %s,1)
+        """
+        cursor.execute(insert_query, (request_id, notification_type, message))
+        db_connection.commit()
+
+        notification_id = cursor.lastrowid
+
+        print("tebriks")
+        send_email(common_params, recipients,3)
+
+        return {
+            "notification_id": notification_id,
+            "recipients": recipients
+        }
+
+    except Exception as e:
+        raise Exception(f"Notification error: {str(e)}")
+
+    finally:
+        cursor.close()
 
 
 @notification_bp.route("/create", methods=["POST"])
