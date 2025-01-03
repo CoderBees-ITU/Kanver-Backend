@@ -225,7 +225,7 @@ def get_personalized_requests():
     
     user_id = request.headers.get("Authorization")
     
-    filters = []
+    filters = [None, None]
 
     # Use CTE to calculate On_The_Way_Count
     select_personalized_requests_query = """
@@ -239,6 +239,13 @@ def get_personalized_requests():
         FROM Requests R
         LEFT JOIN OnTheWayCount OTW ON R.Request_ID = OTW.Request_ID
         WHERE R.Status != 'closed'
+          AND R.Requested_TC_ID != %s
+          AND NOT EXISTS (
+              SELECT 1
+              FROM On_The_Way O
+              WHERE O.Request_ID = R.Request_ID
+                AND O.Donor_TC_ID = %s
+          )
     """
     
     if patient_tc_id:
@@ -284,6 +291,10 @@ def get_personalized_requests():
         user_blood_type = user["Blood_Type"]
         user_city = user["City"]
         user_district = user["District"]
+        user_tc_id = user["TC_ID"]
+        
+        filters[0] = user_tc_id
+        filters[1] = user_tc_id
         
         # Adding ordering logic for personalized results
         select_personalized_requests_query += """
