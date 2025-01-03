@@ -460,3 +460,121 @@ def create_request():
     finally:
         cursor.close()
         connection.close()
+
+@request_bp.route("/request", methods=["PUT"])
+# @auth_required
+def update_request():
+    data = request.get_json()
+    request_id = data.get("request_id")
+    if not request_id:
+        return jsonify({"error": "InvalidInput", "message": "Request ID is required."}), 400
+
+    user_id = request.headers.get("Authorization")
+    if not user_id:
+        return jsonify({"error": "InvalidInput", "message": "User ID is required."}), 400
+
+    fields_to_update = {}
+    allowed_fields = [
+        "donor_count", "location", "hospital", "status", "gender",
+        "patient_tc_id", "blood_type", "age", "note",
+        "patient_name", "patient_surname"
+    ]
+
+    for field in allowed_fields:
+        if field in data:
+            fields_to_update[field] = data[field]
+
+    if not fields_to_update:
+        return jsonify({"error": "InvalidInput", "message": "No valid fields to update provided."}), 400
+
+    set_clause = ", ".join(f"{field} = %s" for field in fields_to_update)
+    query = f"UPDATE Requests SET {set_clause} WHERE Request_ID = %s"
+
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+
+        # Verify if the user exists
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+        user = cursor.fetchone()
+        user_tc_id = user[1]
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "User ID not found in the database."}), 400
+
+        # Verify if the request exists and belongs to the user
+        check_request_query = "SELECT Requested_TC_ID FROM Requests WHERE Request_ID = %s"
+        cursor.execute(check_request_query, (request_id,))
+        request_record = cursor.fetchone()
+        if request_record is None:
+            return jsonify({"error": "NotFound", "message": "No request found with the given Request ID."}), 404
+
+        request_creator_id = request_record[0]
+        if request_creator_id != user_tc_id:
+            return jsonify({"error": "Unauthorized", "message": "You are not authorized to update this request."}), 403
+
+        # Update the request
+        params = list(fields_to_update.values()) + [request_id]
+        cursor.execute(query, params)
+        connection.commit()
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "NotFound", "message": "No request found with the given Request ID."}), 404
+
+        return jsonify({"message": "Request updated successfully."}), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+
+@request_bp.route("/request", methods=["DELETE"])
+# @auth_required
+def delete_request():
+    request_id = request.args.get("request_id")
+    if not request_id:
+        return jsonify({"error": "InvalidInput", "message": "Request ID is required."}), 400
+
+    user_id = request.headers.get("Authorization")
+    if not user_id:
+        return jsonify({"error": "InvalidInput", "message": "User ID is required."}), 400
+
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+        user = cursor.fetchone()
+        user_tc_id = user[1]
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
+
+        # Verify if the request exists and belongs to the user
+        check_request_query = "SELECT Requested_TC_ID FROM Requests WHERE Request_ID = %s"
+        cursor.execute(check_request_query, (request_id,))
+        request_record = cursor.fetchone()
+        if request_record is None:
+            return jsonify({"error": "NotFound", "message": "No request found with the given Request ID."}), 404
+
+        request_creator_id = request_record[0]
+        if request_creator_id != user_tc_id:
+            return jsonify({"error": "Unauthorized", "message": "You are not authorized to delete this request."}), 403
+
+        delete_query = "DELETE FROM Requests WHERE Request_ID = %s"
+        cursor.execute(delete_query, (request_id,))
+        connection.commit()
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "NotFound", "message": "No request found with the given Request ID."}), 404
+
+        return jsonify({"message": "Request deleted successfully."}), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
