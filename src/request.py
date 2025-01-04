@@ -268,13 +268,24 @@ def get_personalized_requests():
                 AND O.Donor_TC_ID = %s
           )
     """
+    blood_type_mapping = {
+        'Ap': 'A+',
+        'An': 'A-',
+        'Bp': 'B+',
+        'Bn': 'B-',
+        'ABp': 'AB+',
+        'ABn': 'AB-',
+        'Op': 'O+',
+        'On': 'O-'
+    }
     
     if patient_tc_id:
         select_personalized_requests_query += " AND R.Patient_TC_ID = %s"
         filters.append(patient_tc_id)
     if blood_type:
+        normalized_blood_type = blood_type_mapping.get(blood_type.strip(), blood_type.strip())
         select_personalized_requests_query += " AND R.Blood_Type = %s"
-        filters.append(blood_type.strip())
+        filters.append(normalized_blood_type)
     if age:
         select_personalized_requests_query += " AND R.Age = %s"
         filters.append(age)
