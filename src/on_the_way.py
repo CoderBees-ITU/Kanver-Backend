@@ -270,91 +270,98 @@ def get_my_on_the_way_requests():
             connection.close()
 
 @on_the_way_bp.route('/on_the_way/<int:on_the_way_id>', methods=['PUT'])
-# @auth_required
 def update_on_the_way_status(on_the_way_id):
-    # Safely retrieve JSON data from the request
     data = request.get_json()
-    user_id = request.headers.get("Authorization")
+    user_id = request.headers.get("Authorization")  
 
-    # Validate the JSON payload
     if not data or 'status' not in data or 'request_id' not in data:
         return jsonify({
-            "error": "InvalidInput", 
+            "error": "InvalidInput",
             "message": "Both 'status' and 'request_id' fields are required in JSON."
         }), 400
 
-    new_status = data['status']
+    new_status = data['status'].strip().lower()
     request_id = data['request_id']
 
-    # (Optional) Validate the Authorization header
+    # 2. Validate the Authorization header (optional, but recommended)
     if not user_id:
         return jsonify({
-            "error": "InvalidInput", 
+            "error": "InvalidInput",
             "message": "Missing Authorization header."
         }), 400
 
+    # 3. Attempt DB operations
+    connection = None
+    cursor = None
     try:
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
 
-        # 1. Check if the user exists
+        # 3a. Check if the user exists
         check_user_query = "SELECT * FROM User WHERE user_id = %s"
         cursor.execute(check_user_query, (user_id,))
         user_record = cursor.fetchone()
         if not user_record:
             return jsonify({
-                "error": "InvalidInput", 
-                "message": "user_id of requester is not found in the database."
+                "error": "InvalidInput",
+                "message": "User with given user_id not found in the database."
             }), 400
 
         requester_tc_id = user_record["TC_ID"]
 
-        # 2. Check if the request (DB record) exists
+        # 3b. Check if the request record exists
         check_request_query = "SELECT * FROM Requests WHERE Request_ID = %s"
         cursor.execute(check_request_query, (request_id,))
-        db_request_record = cursor.fetchone()
-        if not db_request_record:
+        request_record = cursor.fetchone()
+        if not request_record:
             return jsonify({
-                "error": "NotFound", 
+                "error": "NotFound",
                 "message": "Request not found in the database."
             }), 404
 
-        # 3. Ensure the user is authorized to update this particular request
-        if db_request_record['Requested_TC_ID'] != requester_tc_id:
+        # 3c. Check if the user is authorized to update this request
+        if request_record['Requested_TC_ID'] != requester_tc_id:
             return jsonify({
-                "error": "NotAuthorized", 
-                "message": "You are not authorized to update the status of this request."
+                "error": "NotAuthorized",
+                "message": "You are not authorized to update this request."
             }), 403
 
-        # 4. Update the On_The_Way record
+        # 3d. Update the On_The_Way record
         update_query = """
             UPDATE On_The_Way
                SET Status = %s
-             WHERE ID = %s 
+             WHERE ID = %s
                AND Request_ID = %s
         """
         cursor.execute(update_query, (new_status, on_the_way_id, request_id))
 
-        # If no rows were affected, the record wasn't found
+        # If no rows were updated, the record wasn't found or didn't match the filter
         if cursor.rowcount == 0:
             return jsonify({
-                "error": "NotFound", 
-                "message": "No matching record found to update."
+                "error": "NotFound",
+                "message": "No matching On_The_Way record found to update."
             }), 404
 
-        # 5. If the status is 'completed', decrement the donor count
-        if new_status.lower() == "completed":
+        # 3e. If status is 'completed', decrement the donor count for that request
+        if new_status == "completed":
             decrement_donor_count_query = """
                 UPDATE Requests
                    SET Donor_Count = Donor_Count - 1
                  WHERE Request_ID = %s
             """
             cursor.execute(decrement_donor_count_query, (request_id,))
-        
-        check_request_compeleted_query = "SELECT Donor_Count FROM Requests WHERE Request_ID = %s"
-        cursor.execute(check_request_compeleted_query, (request_id,))
-        db_request_record = cursor.fetchone()
-        if db_request_record['Donor_Count'] == 0:
+
+        # 3f. Check whether the request now has zero donors left
+        check_request_completed_query = """
+            SELECT Donor_Count 
+              FROM Requests 
+             WHERE Request_ID = %s
+        """
+        cursor.execute(check_request_completed_query, (request_id,))
+        updated_request_record = cursor.fetchone()
+
+        if updated_request_record and updated_request_record['Donor_Count'] == 0:
+            # Mark the entire request as completed
             update_request_status_query = """
                 UPDATE Requests
                    SET Status = 'completed'
@@ -362,19 +369,22 @@ def update_on_the_way_status(on_the_way_id):
             """
             cursor.execute(update_request_status_query, (request_id,))
 
-        # Commit the changes
+        # 3g. Commit the changes
         connection.commit()
 
-        return jsonify({"message": "Status updated successfully."}), 200
+        return jsonify({
+            "message": "Status updated successfully."
+        }), 200
 
     except mysql.connector.Error as err:
         # Handle any MySQL-related errors
         return jsonify({
-            "error": "DatabaseError", 
+            "error": "DatabaseError",
             "message": f"Database error: {err}"
         }), 500
 
     finally:
+        # 3h. Close DB cursor and connection
         if cursor:
             cursor.close()
         if connection:
