@@ -270,9 +270,9 @@ def get_my_on_the_way_requests():
             connection.close()
 
 
-@on_the_way_bp.route('/on_the_way/<int:request_id>', methods=['PUT'])
+@on_the_way_bp.route('/on_the_way/<int:on_the_way_id>', methods=['PUT'])
 #@auth_required
-def update_on_the_way_status(request_id):
+def update_on_the_way_status(on_the_way_id):
     data = request.get_json()
     user_id = request.headers.get("Authorization")
 
@@ -280,6 +280,7 @@ def update_on_the_way_status(request_id):
         return jsonify({"error": "InvalidInput", "message": "Status is required."}), 400
 
     new_status = data['status']
+    request_id = data['request_id']
 
     try:
         connection = get_db()
@@ -292,15 +293,26 @@ def update_on_the_way_status(request_id):
         if user is None:
             return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
 
-        donor_tc_id = user["TC_ID"]
+        requester_tc_id = user["TC_ID"]
 
-        # Update the status of the donor in the On_The_Way table
+        check_query = "SELECT * FROM Requests WHERE Request_ID = %s"
+
+        cursor.execute(check_query, (request_id,))
+        request = cursor.fetchone()
+
+        if not request:
+            return jsonify({"error": "NotFound", "message": "Request not found in the database."}), 404
+        
+        if request['Requested_TC_ID'] != requester_tc_id:
+            return jsonify({"error": "NotAuthorized", "message": "You are not authorized to update the status of this request."}), 403
+
+
         update_query = """
             UPDATE On_The_Way
             SET Status = %s
-            WHERE Request_ID = %s AND Donor_TC_ID = %s
+            WHERE ID = %s AND Request_ID = %s
         """
-        cursor.execute(update_query, (new_status, request_id, donor_tc_id))
+        cursor.execute(update_query, (new_status, on_the_way_id, request_id))
 
         # Check if the update affected any rows
         if cursor.rowcount == 0:
