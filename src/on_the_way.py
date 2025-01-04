@@ -197,7 +197,10 @@ def get_my_on_the_way_requests():
         query = """
             SELECT 
                 Requests.*, 
-                On_The_Way.* 
+                On_The_Way.*, 
+                (SELECT COUNT(*) 
+                 FROM On_The_Way 
+                 WHERE On_The_Way.Request_ID = Requests.Request_ID) AS On_The_Way_Count
             FROM 
                 On_The_Way
             INNER JOIN 
@@ -266,6 +269,7 @@ def get_my_on_the_way_requests():
         if connection:
             connection.close()
 
+
 @on_the_way_bp.route('/on_the_way/<int:request_id>', methods=['PUT'])
 #@auth_required
 def update_on_the_way_status(request_id):
@@ -302,7 +306,7 @@ def update_on_the_way_status(request_id):
         if cursor.rowcount == 0:
             return jsonify({"error": "NotFound", "message": "No matching record found to update."}), 404
 
-        if new_status == "Donated":
+        if new_status == "completed":
             decrement_donor_count_query = """
                 UPDATE Requests
                 SET Donor_Count = Donor_Count - 1

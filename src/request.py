@@ -111,7 +111,7 @@ def get_requests():
 
         
 @request_bp.route("/request/my_requests", methods=["GET"])
-# auth_required will be commented out 
+# auth_required will be commented out
 # @auth_required
 def get_my_requests():
     patient_tc_id = request.args.get("patient_tc_id")
@@ -126,13 +126,14 @@ def get_my_requests():
     
     user_id = request.headers.get("Authorization")
     
-    filters = [None]
+    filters = [None]  # Placeholder for the user TC_ID
     
-    # Use CTE to calculate On_The_Way_Count
+    # Main query to get requests with on_the_way_count
     select_query = """
         WITH OnTheWayCount AS (
             SELECT Request_ID, COUNT(*) AS On_The_Way_Count
             FROM On_The_Way
+            WHERE Status = "on_the_way"
             GROUP BY Request_ID
         )
         SELECT R.*, 
@@ -190,14 +191,35 @@ def get_my_requests():
 
         # Execute the main query
         cursor.execute(select_query, filters)
-        results = cursor.fetchall()
-        
-        # Format the Create_Time column
-        for row in results:
-            row['Create_Time'] = row['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
+        requests_data = cursor.fetchall()
+
+        if not requests_data:
+            return jsonify({"error": "NotFound", "message": "No requests found for the user."}), 404
+
+        # For each request, fetch the associated On_The_Way records with donor information
+        for req in requests_data:  # Changed variable name to `req`
+            req_id = req["Request_ID"]
+            on_the_way_query = """
+                SELECT OTW.*, 
+                       U.Name AS Donor_Name, 
+                       U.Surname AS Donor_Surname, 
+                       U.City AS Donor_City, 
+                       U.Blood_Type AS Donor_Blood_Type
+                FROM On_The_Way OTW
+                INNER JOIN User U ON OTW.Donor_TC_ID = U.TC_ID
+                WHERE OTW.Request_ID = %s
+            """
+            cursor.execute(on_the_way_query, (req_id,))
+            on_the_ways = cursor.fetchall()
+            req["on_the_ways"] = on_the_ways
+
+            # Format the Create_Time column
+            req['Create_Time'] = req['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
+            for otw in on_the_ways:
+                otw['Create_Time'] = otw['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
 
         # Return the results as JSON
-        return jsonify(results), 200
+        return jsonify(requests_data), 200
 
     except mysql.connector.Error as err:
         # Handle database errors
@@ -208,7 +230,6 @@ def get_my_requests():
         cursor.close()
         connection.close()
 
-    
 @request_bp.route("/request/personalized", methods=["GET"])
 # auth_required will be commented out 
 # @auth_required
