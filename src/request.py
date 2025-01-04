@@ -3,6 +3,7 @@ from flask import Blueprint, jsonify, request
 import mysql.connector
 from database.connection import get_db
 from src.middleware import auth_required
+from src.notification import create_notification_logic
 
 request_bp = Blueprint('request', __name__)
 
@@ -20,58 +21,81 @@ def get_requests():
     hospital = request.args.get("hospital")
     status = request.args.get("status")
     request_id = request.args.get("request_id")
+    user_id = request.headers.get("Authorization")
 
     # Start building the query
-    query = "SELECT * FROM Requests WHERE 1=1"
-    filters = []
+    query = """
+        WITH OnTheWayCount AS (
+            SELECT Request_ID, COUNT(*) AS On_The_Way_Count
+            FROM On_The_Way 
+            GROUP BY Request_ID
+        )
+        SELECT R.*, 
+               COALESCE(OTW.On_The_Way_Count, 0) AS On_The_Way_Count
+        FROM Requests R
+        LEFT JOIN OnTheWayCount OTW ON R.Request_ID = OTW.Request_ID
+        WHERE R.Request_ID NOT IN (
+            SELECT Request_ID 
+            FROM On_The_Way 
+            WHERE Donor_TC_ID = %s
+        )
+    """
+    filters = [None]
 
     # Add filters based on available parameters
     if requested_tc_id:
-        query += " AND Requested_TC_ID = %s"
+        query += " AND R.Requested_TC_ID = %s"
         filters.append(requested_tc_id)
     if patient_tc_id:
-        query += " AND Patient_TC_ID = %s"
+        query += " AND R.Patient_TC_ID = %s"
         filters.append(patient_tc_id)
     if blood_type:
-        query += " AND Blood_Type = %s"
+        query += " AND R.Blood_Type = %s"
         filters.append(blood_type.strip())
     if age:
-        query += " AND Age = %s"
+        query += " AND R.Age = %s"
         filters.append(age)
     if gender:
-        query += " AND Gender = %s"
+        query += " AND R.Gender = %s"
         filters.append(gender)
     if city:
-        query += " AND City = %s"
+        query += " AND R.City = %s"
         filters.append(city)
     if district:
-        query += " AND District = %s"
+        query += " AND R.District = %s"
         filters.append(district)
     if hospital:
-        query += " AND Hospital = %s"
+        query += " AND R.Hospital = %s"
         filters.append(hospital)
     if status:
-        query += " AND Status = %s"
+        query += " AND R.Status = %s"
         filters.append(status)
     if request_id:
-        query += " AND Request_ID = %s"
+        query += " AND R.Request_ID = %s"
         filters.append(request_id)
-
-    query += " ORDER BY Create_Time DESC"
+        
+    query += " GROUP BY R.Request_ID ORDER BY R.Create_Time DESC"
 
     try:
         # Connect to the database
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
+        
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
+
+        donor_tc_id = user["TC_ID"]
+        filters[0] = donor_tc_id
+        
         cursor.execute(query, filters)
         results = cursor.fetchall()
 
         for row in results:
             row['Create_Time'] = row['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
-
-        # Return the results as JSON
-        return jsonify(results), 200
-
 
         # Return the results as JSON
         return jsonify(results), 200
@@ -84,6 +108,237 @@ def get_requests():
         # Ensure cursor and connection are closed
         cursor.close()
         connection.close()
+
+        
+@request_bp.route("/request/my_requests", methods=["GET"])
+# auth_required will be commented out 
+# @auth_required
+def get_my_requests():
+    patient_tc_id = request.args.get("patient_tc_id")
+    blood_type = request.args.get("blood_type")
+    age = request.args.get("age")
+    gender = request.args.get("gender")
+    city = request.args.get("city")
+    district = request.args.get("district")
+    hospital = request.args.get("hospital")
+    status = request.args.get("status")
+    request_id = request.args.get("request_id")
+    
+    user_id = request.headers.get("Authorization")
+    
+    filters = [None]
+    
+    # Use CTE to calculate On_The_Way_Count
+    select_query = """
+        WITH OnTheWayCount AS (
+            SELECT Request_ID, COUNT(*) AS On_The_Way_Count
+            FROM On_The_Way
+            GROUP BY Request_ID
+        )
+        SELECT R.*, 
+               COALESCE(OTW.On_The_Way_Count, 0) AS On_The_Way_Count
+        FROM Requests R
+        LEFT JOIN OnTheWayCount OTW ON R.Request_ID = OTW.Request_ID
+        WHERE R.Requested_TC_ID = %s
+    """
+    
+    if patient_tc_id:
+        select_query += " AND R.Patient_TC_ID = %s"
+        filters.append(patient_tc_id)
+    if blood_type:
+        select_query += " AND R.Blood_Type = %s"
+        filters.append(blood_type.strip())
+    if age:
+        select_query += " AND R.Age = %s"
+        filters.append(age)
+    if gender:
+        select_query += " AND R.Gender = %s"
+        filters.append(gender)
+    if city:
+        select_query += " AND R.City = %s"
+        filters.append(city)
+    if district:
+        select_query += " AND R.District = %s"
+        filters.append(district)
+    if hospital:
+        select_query += " AND R.Hospital = %s"
+        filters.append(hospital)
+    if status:
+        select_query += " AND R.Status = %s"
+        filters.append(status)
+    if request_id:
+        select_query += " AND R.Request_ID = %s"
+        filters.append(request_id)
+        
+    select_query += " ORDER BY R.Create_Time DESC"
+    
+    try:
+        # Connect to the database
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)
+        
+        # Check if user exists
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
+
+        user_tc_id = user["TC_ID"]
+        filters[0] = user_tc_id
+
+        # Execute the main query
+        cursor.execute(select_query, filters)
+        results = cursor.fetchall()
+        
+        # Format the Create_Time column
+        for row in results:
+            row['Create_Time'] = row['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
+
+        # Return the results as JSON
+        return jsonify(results), 200
+
+    except mysql.connector.Error as err:
+        # Handle database errors
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        # Ensure cursor and connection are closed
+        cursor.close()
+        connection.close()
+
+    
+@request_bp.route("/request/personalized", methods=["GET"])
+# auth_required will be commented out 
+# @auth_required
+def get_personalized_requests():
+    patient_tc_id = request.args.get("patient_tc_id")
+    blood_type = request.args.get("blood_type")
+    age = request.args.get("age")
+    gender = request.args.get("gender")
+    city = request.args.get("city")
+    district = request.args.get("district")
+    hospital = request.args.get("hospital")
+    status = request.args.get("status")
+    request_id = request.args.get("request_id")
+    
+    user_id = request.headers.get("Authorization")
+    
+    filters = [None, None]
+
+    # Use CTE to calculate On_The_Way_Count
+    select_personalized_requests_query = """
+        WITH OnTheWayCount AS (
+            SELECT Request_ID, COUNT(*) AS On_The_Way_Count
+            FROM On_The_Way
+            GROUP BY Request_ID
+        )
+        SELECT R.*, 
+               COALESCE(OTW.On_The_Way_Count, 0) AS On_The_Way_Count
+        FROM Requests R
+        LEFT JOIN OnTheWayCount OTW ON R.Request_ID = OTW.Request_ID
+        WHERE R.Status != 'closed'
+          AND R.Requested_TC_ID != %s
+          AND NOT EXISTS (
+              SELECT 1
+              FROM On_The_Way O
+              WHERE O.Request_ID = R.Request_ID
+                AND O.Donor_TC_ID = %s
+          )
+    """
+    
+    if patient_tc_id:
+        select_personalized_requests_query += " AND R.Patient_TC_ID = %s"
+        filters.append(patient_tc_id)
+    if blood_type:
+        select_personalized_requests_query += " AND R.Blood_Type = %s"
+        filters.append(blood_type.strip())
+    if age:
+        select_personalized_requests_query += " AND R.Age = %s"
+        filters.append(age)
+    if gender:
+        select_personalized_requests_query += " AND R.Gender = %s"
+        filters.append(gender)
+    if city:
+        select_personalized_requests_query += " AND R.City = %s"
+        filters.append(city)
+    if district:
+        select_personalized_requests_query += " AND R.District = %s"
+        filters.append(district)
+    if hospital:
+        select_personalized_requests_query += " AND R.Hospital = %s"
+        filters.append(hospital)
+    if status:
+        select_personalized_requests_query += " AND R.Status = %s"
+        filters.append(status)
+    if request_id:
+        select_personalized_requests_query += " AND R.Request_ID = %s"
+        filters.append(request_id)
+    
+    try:
+        # Connect to the database
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)
+        
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+
+        user = cursor.fetchone()
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
+
+        user_blood_type = user["Blood_Type"]
+        user_city = user["City"]
+        user_district = user["District"]
+        user_tc_id = user["TC_ID"]
+        
+        filters[0] = user_tc_id
+        filters[1] = user_tc_id
+        
+        # Adding ordering logic for personalized results
+        select_personalized_requests_query += """
+            ORDER BY
+                CASE
+                    WHEN R.Blood_Type = %s AND R.City = %s AND R.District = %s THEN 1
+                    WHEN R.Blood_Type = %s AND R.City = %s THEN 2
+                    WHEN R.Blood_Type = %s THEN 3
+                    WHEN R.City = %s AND R.District = %s THEN 4
+                    WHEN R.City = %s THEN 5
+                    ELSE 6
+                END,
+                R.Create_Time DESC;
+        """
+        
+        filters.extend([
+            user_blood_type, user_city, user_district,
+            user_blood_type, user_city,
+            user_blood_type,
+            user_city, user_district,
+            user_city
+        ])
+        
+        # Execute the query with filters
+        cursor.execute(select_personalized_requests_query, filters)
+        
+        results = cursor.fetchall()
+        
+        # Format the Create_Time column
+        for row in results:
+            row['Create_Time'] = row['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
+
+        # Return the results as JSON
+        return jsonify(results), 200
+
+    except mysql.connector.Error as err:
+        # Handle database errors
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        # Ensure cursor and connection are closed
+        cursor.close()
+        connection.close()
+
 
 @request_bp.route("/request", methods=["POST"])
 # @auth_required
@@ -182,10 +437,140 @@ def create_request():
             lat, lng, city, district, hospital, status, create_time, donor_count, patient_name, patient_surname
         )
 
-        cursor.execute(insert_query, values)
+        cursor.execute(insert_query, values)  
+        
+        request_id = cursor.lastrowid
+        notification_type = "Blood Request"
+        message = f"Urgent blood request for {patient_name} {patient_surname}"
+        common_params = {"blood": blood_type, "location": district + "/" + city + ", " + hospital, "timeout": "24 saat içinde", "contact": "kanver400@gmail.com"}
+
+        notification_result = create_notification_logic(request_id, notification_type, message, common_params, connection)
+
+        connection.commit()  
+        
+        return jsonify({
+            "message": "Request created and notification sent successfully.",
+            "request_id": request_id,
+            "notification_id": notification_result["notification_id"]
+        }), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+
+@request_bp.route("/request", methods=["PUT"])
+# @auth_required
+def update_request():
+    data = request.get_json()
+    request_id = data.get("request_id")
+    if not request_id:
+        return jsonify({"error": "InvalidInput", "message": "Request ID is required."}), 400
+
+    user_id = request.headers.get("Authorization")
+    if not user_id:
+        return jsonify({"error": "InvalidInput", "message": "User ID is required."}), 400
+
+    fields_to_update = {}
+    allowed_fields = [
+        "donor_count", "location", "hospital", "status", "gender",
+        "patient_tc_id", "blood_type", "age", "note",
+        "patient_name", "patient_surname"
+    ]
+
+    for field in allowed_fields:
+        if field in data:
+            fields_to_update[field] = data[field]
+
+    if not fields_to_update:
+        return jsonify({"error": "InvalidInput", "message": "No valid fields to update provided."}), 400
+
+    set_clause = ", ".join(f"{field} = %s" for field in fields_to_update)
+    query = f"UPDATE Requests SET {set_clause} WHERE Request_ID = %s"
+
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+
+        # Verify if the user exists
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+        user = cursor.fetchone()
+        user_tc_id = user[1]
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "User ID not found in the database."}), 400
+
+        # Verify if the request exists and belongs to the user
+        check_request_query = "SELECT Requested_TC_ID FROM Requests WHERE Request_ID = %s"
+        cursor.execute(check_request_query, (request_id,))
+        request_record = cursor.fetchone()
+        if request_record is None:
+            return jsonify({"error": "NotFound", "message": "No request found with the given Request ID."}), 404
+
+        request_creator_id = request_record[0]
+        if request_creator_id != user_tc_id:
+            return jsonify({"error": "Unauthorized", "message": "You are not authorized to update this request."}), 403
+
+        # Update the request
+        params = list(fields_to_update.values()) + [request_id]
+        cursor.execute(query, params)
         connection.commit()
 
-        return jsonify({"message": "Request created successfully", "request_id": cursor.lastrowid}), 200
+        if cursor.rowcount == 0:
+            return jsonify({"error": "NotFound", "message": "No request found with the given Request ID."}), 404
+
+        return jsonify({"message": "Request updated successfully."}), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+
+@request_bp.route("/request", methods=["DELETE"])
+# @auth_required
+def delete_request():
+    request_id = request.args.get("request_id")
+    if not request_id:
+        return jsonify({"error": "InvalidInput", "message": "Request ID is required."}), 400
+
+    user_id = request.headers.get("Authorization")
+    if not user_id:
+        return jsonify({"error": "InvalidInput", "message": "User ID is required."}), 400
+
+    try:
+        connection = get_db()
+        cursor = connection.cursor()
+
+        check_user_query = "SELECT * FROM User WHERE user_id = %s"
+        cursor.execute(check_user_query, (user_id,))
+        user = cursor.fetchone()
+        user_tc_id = user[1]
+        if user is None:
+            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
+
+        # Verify if the request exists and belongs to the user
+        check_request_query = "SELECT Requested_TC_ID FROM Requests WHERE Request_ID = %s"
+        cursor.execute(check_request_query, (request_id,))
+        request_record = cursor.fetchone()
+        if request_record is None:
+            return jsonify({"error": "NotFound", "message": "No request found with the given Request ID."}), 404
+
+        request_creator_id = request_record[0]
+        if request_creator_id != user_tc_id:
+            return jsonify({"error": "Unauthorized", "message": "You are not authorized to delete this request."}), 403
+
+        delete_query = "DELETE FROM Requests WHERE Request_ID = %s"
+        cursor.execute(delete_query, (request_id,))
+        connection.commit()
+
+        if cursor.rowcount == 0:
+            return jsonify({"error": "NotFound", "message": "No request found with the given Request ID."}), 404
+
+        return jsonify({"message": "Request deleted successfully."}), 200
 
     except mysql.connector.Error as err:
         return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500

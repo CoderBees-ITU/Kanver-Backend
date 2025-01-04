@@ -9,6 +9,7 @@ from src.user import user_bp
 from src.auth import auth_bp
 from src.banned_user import banned_bp
 from src.notification import notification_bp
+from src.on_the_way import on_the_way_bp
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -17,7 +18,7 @@ def load_configs(app):
 
     app.config['DEBUG'] = os.getenv("DEBUG", "True") == "True"
     app.config['PORT'] = int(os.getenv("PORT", 8080))
-    app.config['MYSQL_PORT'] = int(os.getenv("DOCKER_MYSQL_PORT",os.getenv("MYSQL_PORT", "localhost")))
+    app.config['MYSQL_PORT'] = int(os.getenv("DOCKER_MYSQL_PORT",os.getenv("MYSQL_PORT", "3306")))
     app.config['MYSQL_HOST'] = os.getenv("DOCKER_MYSQL_HOST",os.getenv("MYSQL_HOST", "localhost"))
     app.config['MYSQL_USER'] = os.getenv("DOCKER_MYSQL_USER",os.getenv("MYSQL_USER", "root"))
     app.config['MYSQL_PASSWORD'] = os.getenv("DOCKER_MYSQL_PASSWORD",os.getenv("MYSQL_PASSWORD", "root"))
@@ -48,6 +49,7 @@ app.register_blueprint(user_bp, url_prefix='/')
 app.register_blueprint(auth_bp, url_prefix='/')
 app.register_blueprint(banned_bp, url_prefix='/')
 app.register_blueprint(notification_bp, url_prefix='/')
+app.register_blueprint(on_the_way_bp, url_prefix='/')
 
 
 

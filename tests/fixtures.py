@@ -60,7 +60,7 @@ from database.connection import get_db
 
 def get_configs():
     config = {}
-    config['MYSQL_PORT'] = int(os.getenv("DOCKER_MYSQL_PORT",os.getenv("MYSQL_PORT", "localhost")))
+    config['MYSQL_PORT'] = int(os.getenv("DOCKER_MYSQL_PORT",os.getenv("MYSQL_PORT", "3306")))
     config['MYSQL_HOST'] = os.getenv("DOCKER_MYSQL_HOST",os.getenv("MYSQL_HOST", "localhost"))
     config['MYSQL_USER'] = os.getenv("DOCKER_MYSQL_USER",os.getenv("MYSQL_USER", "root"))
     config['MYSQL_PASSWORD'] = os.getenv("DOCKER_MYSQL_PASSWORD",os.getenv("MYSQL_PASSWORD", "root"))
@@ -79,7 +79,7 @@ def db_connection(db_config):
     """
     Provide a database connection for tests.
     """
-    connection = get_db(config=db_config)
+    connection = get_db_with_config(db_config)
     connection.cursor_class = MySQLCursorDict  # Set cursor to return dictionaries
     yield connection
     connection.close()
