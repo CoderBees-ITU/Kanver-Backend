@@ -1,7 +1,9 @@
 # Firebase Related Fixtures
-import pytest
-from unittest.mock import MagicMock
 import logging
+from unittest.mock import MagicMock
+
+import pytest
+from firebase_admin import auth
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +17,7 @@ def delete_user(uid):
 def create_user(email, password, display_name):
     mock_user_record = MagicMock()
     mock_user_record.uid = "test_user_id"
+    mock_user_record.email = email
     return mock_user_record
 
 def create_custom_token(uid):
@@ -23,11 +26,14 @@ def create_custom_token(uid):
     else:
         raise ValueError("Invalid user uid is used for custom token")
 
-def verify_id_token(uid):
-    if uid == "test_user_id":
-        return "mock_token"
+def verify_id_token(token):
+    if token == "mock_token":
+        return {
+            "uid": "test_user_id",
+            "email": "test@example.com"   
+        }
     else:
-        raise ValueError("Invalid token")
+        raise auth.InvalidIdTokenError("Invalid token")
 
 # Define a pytest fixture to mock Firebase
 @pytest.fixture
@@ -43,11 +49,15 @@ def mock_firebase(monkeypatch):
     monkeypatch.setattr("firebase_admin.auth.create_custom_token", mock_create_custom_token)
     monkeypatch.setattr("firebase_admin.auth.verify_id_token", mock_verify_id_token)
 
+import os
+
 #  Database related fixtures
 import pytest
-import os 
-from database.connection import get_db
 from mysql.connector.cursor import MySQLCursorDict
+
+from database.connection import get_db
+
+
 def get_configs():
     config = {}
     config['MYSQL_PORT'] = int(os.getenv("DOCKER_MYSQL_PORT",os.getenv("MYSQL_PORT", "localhost")))
