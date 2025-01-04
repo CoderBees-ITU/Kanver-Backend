@@ -269,62 +269,86 @@ def get_my_on_the_way_requests():
         if connection:
             connection.close()
 
-
 @on_the_way_bp.route('/on_the_way/<int:on_the_way_id>', methods=['PUT'])
-#@auth_required
+# @auth_required
 def update_on_the_way_status(on_the_way_id):
+    # Safely retrieve JSON data from the request
     data = request.get_json()
     user_id = request.headers.get("Authorization")
 
-    if not data or 'status' not in data:
-        return jsonify({"error": "InvalidInput", "message": "Status is required."}), 400
+    # Validate the JSON payload
+    if not data or 'status' not in data or 'request_id' not in data:
+        return jsonify({
+            "error": "InvalidInput", 
+            "message": "Both 'status' and 'request_id' fields are required in JSON."
+        }), 400
 
     new_status = data['status']
     request_id = data['request_id']
 
+    # (Optional) Validate the Authorization header
+    if not user_id:
+        return jsonify({
+            "error": "InvalidInput", 
+            "message": "Missing Authorization header."
+        }), 400
+
     try:
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
-        
+
+        # 1. Check if the user exists
         check_user_query = "SELECT * FROM User WHERE user_id = %s"
         cursor.execute(check_user_query, (user_id,))
+        user_record = cursor.fetchone()
+        if not user_record:
+            return jsonify({
+                "error": "InvalidInput", 
+                "message": "user_id of requester is not found in the database."
+            }), 400
 
-        user = cursor.fetchone()
-        if user is None:
-            return jsonify({"error": "InvalidInput", "message": "user_id of requester is not found in the database."}), 400
+        requester_tc_id = user_record["TC_ID"]
 
-        requester_tc_id = user["TC_ID"]
+        # 2. Check if the request (DB record) exists
+        check_request_query = "SELECT * FROM Requests WHERE Request_ID = %s"
+        cursor.execute(check_request_query, (request_id,))
+        db_request_record = cursor.fetchone()
+        if not db_request_record:
+            return jsonify({
+                "error": "NotFound", 
+                "message": "Request not found in the database."
+            }), 404
 
-        check_query = "SELECT * FROM Requests WHERE Request_ID = %s"
+        # 3. Ensure the user is authorized to update this particular request
+        if db_request_record['Requested_TC_ID'] != requester_tc_id:
+            return jsonify({
+                "error": "NotAuthorized", 
+                "message": "You are not authorized to update the status of this request."
+            }), 403
 
-        cursor.execute(check_query, (request_id,))
-        request = cursor.fetchone()
-
-        if not request:
-            return jsonify({"error": "NotFound", "message": "Request not found in the database."}), 404
-        
-        if request['Requested_TC_ID'] != requester_tc_id:
-            return jsonify({"error": "NotAuthorized", "message": "You are not authorized to update the status of this request."}), 403
-
-
+        # 4. Update the On_The_Way record
         update_query = """
             UPDATE On_The_Way
-            SET Status = %s
-            WHERE ID = %s AND Request_ID = %s
+               SET Status = %s
+             WHERE ID = %s 
+               AND Request_ID = %s
         """
         cursor.execute(update_query, (new_status, on_the_way_id, request_id))
 
-        # Check if the update affected any rows
+        # If no rows were affected, the record wasn't found
         if cursor.rowcount == 0:
-            return jsonify({"error": "NotFound", "message": "No matching record found to update."}), 404
+            return jsonify({
+                "error": "NotFound", 
+                "message": "No matching record found to update."
+            }), 404
 
-        if new_status == "completed":
+        # 5. If the status is 'completed', decrement the donor count
+        if new_status.lower() == "completed":
             decrement_donor_count_query = """
                 UPDATE Requests
-                SET Donor_Count = Donor_Count - 1
-                WHERE Request_ID = %s
+                   SET Donor_Count = Donor_Count - 1
+                 WHERE Request_ID = %s
             """
-        
             cursor.execute(decrement_donor_count_query, (request_id,))
 
         # Commit the changes
@@ -333,7 +357,11 @@ def update_on_the_way_status(on_the_way_id):
         return jsonify({"message": "Status updated successfully."}), 200
 
     except mysql.connector.Error as err:
-        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+        # Handle any MySQL-related errors
+        return jsonify({
+            "error": "DatabaseError", 
+            "message": f"Database error: {err}"
+        }), 500
 
     finally:
         if cursor:
