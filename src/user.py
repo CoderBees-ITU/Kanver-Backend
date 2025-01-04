@@ -44,6 +44,15 @@ def get_user_by_tc(user_id):
         if not user:
             return jsonify({"error": "NotFound", "message": "User not found with the given TC ID."}), 404
 
+        banned_query = "SELECT * FROM Banned WHERE TC_ID = %s"
+        cursor.execute(banned_query, (user['TC_ID'],))
+        banned = cursor.fetchone()
+        if banned:
+            user['is_banned'] = True
+        else:
+            user['is_banned'] = False
+
+
         return jsonify(user), 200
 
     except mysql.connector.Error as err:
