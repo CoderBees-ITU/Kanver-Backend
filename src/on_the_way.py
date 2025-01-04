@@ -350,6 +350,17 @@ def update_on_the_way_status(on_the_way_id):
                  WHERE Request_ID = %s
             """
             cursor.execute(decrement_donor_count_query, (request_id,))
+        
+        check_request_compeleted_query = "SELECT Donor_Count FROM Requests WHERE Request_ID = %s"
+        cursor.execute(check_request_compeleted_query, (request_id,))
+        db_request_record = cursor.fetchone()
+        if db_request_record['Donor_Count'] == 0:
+            update_request_status_query = """
+                UPDATE Requests
+                   SET Status = 'completed'
+                 WHERE Request_ID = %s
+            """
+            cursor.execute(update_request_status_query, (request_id,))
 
         # Commit the changes
         connection.commit()
@@ -368,6 +379,7 @@ def update_on_the_way_status(on_the_way_id):
             cursor.close()
         if connection:
             connection.close()
+
 
 @on_the_way_bp.route('/on_the_way/my', methods=['GET'])
 # @auth_required
