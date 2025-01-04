@@ -460,3 +460,25 @@ def create_request():
     finally:
         cursor.close()
         connection.close()
+
+@request_bp.route("/requests", methods=["GET"])
+def get_all_request():
+    try:
+        connection = get_db()
+        cursor = connection.cursor(dictionary=True)
+
+        query = "SELECT * FROM Requests"
+        cursor.execute(query)
+        users = cursor.fetchall()
+
+        if not users:
+            return jsonify({"error": "NotFound", "message": "No requests found in the database."}), 404
+
+        return jsonify(users), 200
+
+    except mysql.connector.Error as err:
+        return jsonify({"error": "DatabaseError", "message": f"Database error: {err}"}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
