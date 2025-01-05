@@ -5,6 +5,17 @@ import mysql.connector
 import json
 import requests
 
+def convert_turkish_chars(text):
+    turkish_to_english = str.maketrans({
+        "ç": "c", "Ç": "C",
+        "ğ": "g", "Ğ": "G",
+        "ı": "i", "İ": "I",
+        "ö": "o", "Ö": "O",
+        "ş": "s", "Ş": "S",
+        "ü": "u", "Ü": "U"
+    })
+    return text.translate(turkish_to_english)
+
 
 notification_bp = Blueprint("notification", __name__)
 
@@ -63,8 +74,11 @@ def create_notification_logic(request_id, notification_type, message, common_par
     hospital = location_parts[1]
     district_city_parts = district_city.split("/")
     
-    district = district_city_parts[0]
-    city = district_city_parts[1]
+    district_upper = district_city_parts[0].upper()
+    city_upper = district_city_parts[1].upper()
+    
+    uni_district = convert_turkish_chars(district_upper)
+    uni_city = convert_turkish_chars(city_upper)
     try:
         cursor = db_connection.cursor(dictionary=True)
  
@@ -78,10 +92,10 @@ def create_notification_logic(request_id, notification_type, message, common_par
                 User.TC_ID = Banned_Users.TC_ID
             WHERE 
                 Banned_Users.TC_ID is null and
-                Blood_Type = %s AND City = %s AND District = %s
+                Blood_Type = %s AND (City = %s OR City = %s)AND (District = %s OR District = %s)
                 and is_Eligible=True;
         """
-        cursor.execute(query, (common_params["blood"], city, district,))
+        cursor.execute(query, (common_params["blood"], city_upper, uni_city,district_upper,uni_district))
         tmp_recipients = cursor.fetchall()
 
         # Prepare recipients list
