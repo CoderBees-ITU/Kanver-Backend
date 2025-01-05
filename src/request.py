@@ -421,8 +421,6 @@ def create_request():
     district = location.get("district")
     lat= location.get("lat")
     lng = location.get("lng")
-    print(lat)
-    print(lng)
 
     try:
         connection = get_db()
@@ -473,7 +471,7 @@ def create_request():
         values = (
             requested_tc_id, patient_tc_id, blood_type, age, gender, note,
             lat, lng, city, district, hospital, status, create_time, donor_count, patient_name, patient_surname
-        )
+        ) 
 
         cursor.execute(insert_query, values)  
         
