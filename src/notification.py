@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from database.connection import get_db
 import mysql.connector
+import unidecode
 
 import json
 import requests
@@ -63,24 +64,31 @@ def create_notification_logic(request_id, notification_type, message, common_par
     hospital = location_parts[1]
     district_city_parts = district_city.split("/")
     
-    district = district_city_parts[0]
-    city = district_city_parts[1]
+    district = unidecode.unidecode(district_city_parts[0].lower().strip())
+    city = unidecode.unidecode(district_city_parts[1].lower().strip())
+    
     try:
         cursor = db_connection.cursor(dictionary=True)
- 
-        # Query users with matching blood type
+        
+        # Query users with matching blood type, normalize the City and District fields
         query = """
             SELECT 
                 CONCAT(Name, ' ', Surname) AS fullName,
                 Email 
             FROM 
-                User left join Banned_Users on
+                User 
+            LEFT JOIN 
+                Banned_Users 
+            ON 
                 User.TC_ID = Banned_Users.TC_ID
             WHERE 
-                Banned_Users.TC_ID is null and
-                Blood_Type = %s AND City = %s AND District = %s
-                and is_Eligible=True;
+                Banned_Users.TC_ID IS NULL 
+                AND Blood_Type = %s 
+                AND LOWER(unidecode(City)) = %s 
+                AND LOWER(unidecode(District)) = %s
+                AND is_Eligible = TRUE;
         """
+        # Execute query with normalized parameters
         cursor.execute(query, (common_params["blood"], city, district,))
         tmp_recipients = cursor.fetchall()
 
@@ -89,10 +97,10 @@ def create_notification_logic(request_id, notification_type, message, common_par
 
         # Insert notification into Notifications table
         insert_query = """
-            INSERT INTO Notifications (Request_ID, Notification_Type, Message,Total_Mail_Sent)
+            INSERT INTO Notifications (Request_ID, Notification_Type, Message, Total_Mail_Sent)
             VALUES (%s, %s, %s, %s)
         """
-        cursor.execute(insert_query, (request_id, notification_type, message,len(recipients)))
+        cursor.execute(insert_query, (request_id, notification_type, message, len(recipients)))
         db_connection.commit()
 
         # Get the notification ID
@@ -100,7 +108,7 @@ def create_notification_logic(request_id, notification_type, message, common_par
         common_params["locations"] = hospital
 
         # Send email
-        send_email(common_params, recipients,2)
+        send_email(common_params, recipients, 2)
 
         return {
             "notification_id": notification_id,
