@@ -477,7 +477,7 @@ def create_request():
             "timeout": "24 hours",
             "contact": "kanver400@gmail.com"
         }
-        notification_result = create_notification_logic(request_id, notification_type, message, common_params, connection)
+        notification_result = create_notification_logic(request_id, notification_type, message, common_params, connection, user_id)
 
         connection.commit()  
         

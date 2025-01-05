@@ -57,7 +57,7 @@ def send_email(common_params, recipients,templa_id):
         print(response.text)
         return None
 
-def create_notification_logic(request_id, notification_type, message, common_params, db_connection):
+def create_notification_logic(request_id, notification_type, message, common_params, db_connection, user_id):
     location = common_params["location"]
     try:
         cursor = db_connection.cursor(dictionary=True)
@@ -76,8 +76,9 @@ def create_notification_logic(request_id, notification_type, message, common_par
               AND LOWER(City) = LOWER(%s)
               AND LOWER(District) = LOWER(%s)
               AND Is_Eligible = TRUE
+              AND User_id != %s
         """
-        cursor.execute(query, (common_params["blood"], city, district))
+        cursor.execute(query, (common_params["blood"], city, district, user_id))
         recipients = [{"email": row["Email"], "name": row["fullName"]} for row in cursor.fetchall()]
         print(recipients)
 
