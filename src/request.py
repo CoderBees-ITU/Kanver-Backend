@@ -480,8 +480,12 @@ def create_request():
         request_id = cursor.lastrowid
         notification_type = "Blood Request"
         message = f"Urgent blood request for {patient_name} {patient_surname}"
-        common_params = {"blood": blood_type, "location": district + "/" + city + ", " + hospital, "timeout": "24 saat içinde", "contact": "kanver400@gmail.com"}
-
+        common_params = {
+            "blood": blood_type,
+            "location": f"{location['district']}/{location['city']}, {data['hospital']}",
+            "timeout": "24 hours",
+            "contact": "kanver400@gmail.com"
+        }
         notification_result = create_notification_logic(request_id, notification_type, message, common_params, connection)
 
         connection.commit()  
@@ -498,6 +502,7 @@ def create_request():
     finally:
         cursor.close()
         connection.close()
+
 
 @request_bp.route("/request", methods=["PUT"])
 # @auth_required
