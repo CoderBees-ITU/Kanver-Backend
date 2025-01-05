@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify
 from database.connection import get_db
 import mysql.connector
+# import unidecode
 
 import json
 import requests
@@ -56,51 +57,45 @@ def send_email(common_params, recipients,templa_id):
         print(response.text)
         return None
 
-def create_notification_logic(request_id, notification_type, message, common_params, db_connection):
+def create_notification_logic(request_id, notification_type, message, common_params, db_connection, user_id):
     location = common_params["location"]
-    location_parts = location.split(", ")
-    district_city = location_parts[0]
-    hospital = location_parts[1]
-    district_city_parts = district_city.split("/")
-    
-    district = district_city_parts[0]
-    city = district_city_parts[1]
     try:
         cursor = db_connection.cursor(dictionary=True)
- 
-        # Query users with matching blood type
-        query = """
-            SELECT 
-                CONCAT(Name, ' ', Surname) AS fullName,
-                Email 
-            FROM 
-                User left join Banned_Users on
-                User.TC_ID = Banned_Users.TC_ID
-            WHERE 
-                Banned_Users.TC_ID is null and
-                Blood_Type = %s AND City = %s AND District = %s
-                and is_Eligible=True;
-        """
-        cursor.execute(query, (common_params["blood"], city, district,))
-        tmp_recipients = cursor.fetchall()
 
-        # Prepare recipients list
-        recipients = [{"email": recipient["Email"], "name": recipient["fullName"]} for recipient in tmp_recipients]
+        # Extract location details
+        location_parts = location.split(", ")
+        district, city = location_parts[0].split("/")
+        hospital = location_parts[1]
+
+        # Convert city and district to lowercase for comparison
+        query = """
+            SELECT CONCAT(Name, ' ', Surname) AS fullName, Email
+            FROM User
+            LEFT JOIN Banned_Users ON User.TC_ID = Banned_Users.TC_ID
+            WHERE Banned_Users.TC_ID IS NULL AND Blood_Type = %s
+              AND LOWER(City) = LOWER(%s)
+              AND LOWER(District) = LOWER(%s)
+              AND Is_Eligible = TRUE
+              AND User_id != %s
+        """
+        cursor.execute(query, (common_params["blood"], city, district, user_id))
+        recipients = [{"email": row["Email"], "name": row["fullName"]} for row in cursor.fetchall()]
+        print(recipients)
 
         # Insert notification into Notifications table
         insert_query = """
-            INSERT INTO Notifications (Request_ID, Notification_Type, Message,Total_Mail_Sent)
+            INSERT INTO Notifications (Request_ID, Notification_Type, Message, Total_Mail_Sent)
             VALUES (%s, %s, %s, %s)
         """
-        cursor.execute(insert_query, (request_id, notification_type, message,len(recipients)))
+        cursor.execute(insert_query, (request_id, notification_type, message, len(recipients)))
         db_connection.commit()
 
-        # Get the notification ID
         notification_id = cursor.lastrowid
-        common_params["locations"] = hospital
 
         # Send email
-        send_email(common_params, recipients,2)
+        common_params["locations"] = hospital
+        if recipients:
+            send_email(common_params, recipients, 2)
 
         return {
             "notification_id": notification_id,
@@ -112,7 +107,7 @@ def create_notification_logic(request_id, notification_type, message, common_par
 
     finally:
         cursor.close()
-
+        
 def create_notification_logic_on_the_way(on_the_way_id, notification_type, message, db_connection):
     """
     'On The Way' butonuna tıklama sonrası bildirim ve e-posta işlemlerini yönetir.

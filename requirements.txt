@@ -67,4 +67,5 @@ pluggy==1.5.0
 pydantic==2.10.4
 pydantic_core==2.27.2
 pytest==8.3.4
+Unidecode==0.04.12
 locust==2.32.5

@@ -111,7 +111,7 @@ def get_requests():
 
         
 @request_bp.route("/request/my_requests", methods=["GET"])
-# auth_required will be commented out 
+# auth_required will be commented out
 # @auth_required
 def get_my_requests():
     patient_tc_id = request.args.get("patient_tc_id")
@@ -126,13 +126,14 @@ def get_my_requests():
     
     user_id = request.headers.get("Authorization")
     
-    filters = [None]
+    filters = [None]  # Placeholder for the user TC_ID
     
-    # Use CTE to calculate On_The_Way_Count
+    # Main query to get requests with on_the_way_count
     select_query = """
         WITH OnTheWayCount AS (
             SELECT Request_ID, COUNT(*) AS On_The_Way_Count
             FROM On_The_Way
+            WHERE Status = "on_the_way"
             GROUP BY Request_ID
         )
         SELECT R.*, 
@@ -190,14 +191,35 @@ def get_my_requests():
 
         # Execute the main query
         cursor.execute(select_query, filters)
-        results = cursor.fetchall()
-        
-        # Format the Create_Time column
-        for row in results:
-            row['Create_Time'] = row['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
+        requests_data = cursor.fetchall()
+
+        if not requests_data:
+            return jsonify({"error": "NotFound", "message": "No requests found for the user."}), 404
+
+        # For each request, fetch the associated On_The_Way records with donor information
+        for req in requests_data:  # Changed variable name to `req`
+            req_id = req["Request_ID"]
+            on_the_way_query = """
+                SELECT OTW.*, 
+                       U.Name AS Donor_Name, 
+                       U.Surname AS Donor_Surname, 
+                       U.City AS Donor_City, 
+                       U.Blood_Type AS Donor_Blood_Type
+                FROM On_The_Way OTW
+                INNER JOIN User U ON OTW.Donor_TC_ID = U.TC_ID
+                WHERE OTW.Request_ID = %s
+            """
+            cursor.execute(on_the_way_query, (req_id,))
+            on_the_ways = cursor.fetchall()
+            req["on_the_ways"] = on_the_ways
+
+            # Format the Create_Time column
+            req['Create_Time'] = req['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
+            for otw in on_the_ways:
+                otw['Create_Time'] = otw['Create_Time'].strftime('%Y-%m-%d %H:%M:%S')
 
         # Return the results as JSON
-        return jsonify(results), 200
+        return jsonify(requests_data), 200
 
     except mysql.connector.Error as err:
         # Handle database errors
@@ -208,7 +230,6 @@ def get_my_requests():
         cursor.close()
         connection.close()
 
-    
 @request_bp.route("/request/personalized", methods=["GET"])
 # auth_required will be commented out 
 # @auth_required
@@ -247,13 +268,24 @@ def get_personalized_requests():
                 AND O.Donor_TC_ID = %s
           )
     """
+    blood_type_mapping = {
+        'Ap': 'A+',
+        'An': 'A-',
+        'Bp': 'B+',
+        'Bn': 'B-',
+        'ABp': 'AB+',
+        'ABn': 'AB-',
+        'Op': 'O+',
+        'On': 'O-'
+    }
     
     if patient_tc_id:
         select_personalized_requests_query += " AND R.Patient_TC_ID = %s"
         filters.append(patient_tc_id)
     if blood_type:
+        normalized_blood_type = blood_type_mapping.get(blood_type.strip(), blood_type.strip())
         select_personalized_requests_query += " AND R.Blood_Type = %s"
-        filters.append(blood_type.strip())
+        filters.append(normalized_blood_type)
     if age:
         select_personalized_requests_query += " AND R.Age = %s"
         filters.append(age)
@@ -322,6 +354,12 @@ def get_personalized_requests():
         cursor.execute(select_personalized_requests_query, filters)
         
         results = cursor.fetchall()
+
+        # Filter out results where status is not 'pending'
+        results = [result for result in results if result['Status'] == 'pending']
+
+
+
         
         # Format the Create_Time column
         for row in results:
@@ -352,14 +390,7 @@ def create_request():
     if not user_id:
         return jsonify({"error": "InvalidInput", "message": "User ID is required."  }), 400
     
-    required_fields = ["donor_count", "location", "hospital", "status", "gender"]
-
-    if "patient_tc_id" not in data:
-        required_fields.append("blood_type")
-        required_fields.append("age")
-        required_fields.append("patient_name")
-        required_fields.append("patient_surname")
-        
+    required_fields = ["donor_count", "location", "hospital", "status", "gender"]        
 
     for field in required_fields:
         if field not in data:
@@ -367,7 +398,7 @@ def create_request():
 
     requested_tc_id = ""
     patient_tc_id = data.get("patient_tc_id")
-    blood_type = data["blood_type"]
+    blood_type = data.get("blood_type")
     age = data.get("age")
     gender = data.get("gender")
     note = data.get("note")
@@ -383,8 +414,6 @@ def create_request():
     district = location.get("district")
     lat= location.get("lat")
     lng = location.get("lng")
-    print(lat)
-    print(lng)
 
     try:
         connection = get_db()
@@ -435,16 +464,20 @@ def create_request():
         values = (
             requested_tc_id, patient_tc_id, blood_type, age, gender, note,
             lat, lng, city, district, hospital, status, create_time, donor_count, patient_name, patient_surname
-        )
+        ) 
 
         cursor.execute(insert_query, values)  
         
         request_id = cursor.lastrowid
         notification_type = "Blood Request"
         message = f"Urgent blood request for {patient_name} {patient_surname}"
-        common_params = {"blood": blood_type, "location": district + "/" + city + ", " + hospital, "timeout": "24 saat içinde", "contact": "kanver400@gmail.com"}
-
-        notification_result = create_notification_logic(request_id, notification_type, message, common_params, connection)
+        common_params = {
+            "blood": blood_type,
+            "location": f"{location['district']}/{location['city']}, {data['hospital']}",
+            "timeout": "24 hours",
+            "contact": "kanver400@gmail.com"
+        }
+        notification_result = create_notification_logic(request_id, notification_type, message, common_params, connection, user_id)
 
         connection.commit()  
         
@@ -460,6 +493,7 @@ def create_request():
     finally:
         cursor.close()
         connection.close()
+
 
 @request_bp.route("/request", methods=["PUT"])
 # @auth_required
