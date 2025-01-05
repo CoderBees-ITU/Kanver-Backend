@@ -49,15 +49,12 @@ def mock_firebase(monkeypatch):
     monkeypatch.setattr("firebase_admin.auth.create_custom_token", mock_create_custom_token)
     monkeypatch.setattr("firebase_admin.auth.verify_id_token", mock_verify_id_token)
 
-import os
 
 #  Database related fixtures
 import pytest
+import os
+from database.helper import get_db_with_config
 from mysql.connector.cursor import MySQLCursorDict
-
-from database.connection import get_db
-
-
 def get_configs():
     config = {}
     config['MYSQL_PORT'] = int(os.getenv("DOCKER_MYSQL_PORT",os.getenv("MYSQL_PORT", "3306")))
@@ -87,7 +84,7 @@ def db_connection(db_config):
 @pytest.fixture
 def truncate_table(db_connection):
     """
-    Truncate the Users table in the database.
+    Truncate the table in the database.
     """
     def truncate_table_wrapper(table):
         cursor = db_connection.cursor()
@@ -97,3 +94,34 @@ def truncate_table(db_connection):
         db_connection.commit()
         cursor.close()
     return truncate_table_wrapper
+
+@pytest.fixture
+def insert_mock_data(db_connection):
+    """
+    Insert mock data and return the inserted data.
+    """
+    def insert_mock_data_wrapper(table, data):
+        """
+        Inserts the provided data into the specified table.
+        Args:
+            table (str): The name of the table to insert data into.
+            data (list[dict]): A list of dictionaries where each dictionary represents a row.
+        Returns:
+            list[dict]: The inserted data.
+        """
+        if not data:
+            raise ValueError("Data cannot be empty.")
+
+        # Extract column names from the first dictionary
+        columns = data[0].keys()
+
+        # Create SQL query dynamically
+        placeholders = ", ".join(["%s"] * len(columns))
+        query = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})"
+
+        # Insert all rows
+        cursor = db_connection.cursor()
+        values = [tuple(row[col] for col in columns) for row in data]
+        cursor.executemany(query, values)
+        db_connection.commit()
+    return insert_mock_data_wrapper
