@@ -350,6 +350,23 @@ def update_on_the_way_status(on_the_way_id):
                  WHERE Request_ID = %s
             """
             cursor.execute(decrement_donor_count_query, (request_id,))
+            
+            get_donor_user_id_query = """
+                SELECT User.User_id
+                FROM On_The_Way
+                INNER JOIN User ON On_The_Way.Donor_TC_ID = User.TC_ID
+                WHERE On_The_Way.ID = %s
+            """
+            cursor.execute(get_donor_user_id_query, (on_the_way_id,))
+            donor_user_id = cursor.fetchone()
+            donor_user_id = donor_user_id['User_id']
+            
+            update_user_is_eligible_query = """
+                UPDATE User
+                SET Is_Eligible = FALSE, Last_Donation_Date = CURRENT_TIMESTAMP
+                WHERE User_id = %s
+            """
+            cursor.execute(update_user_is_eligible_query, (donor_user_id,))
 
         # 3f. Check whether the request now has zero donors left
         check_request_completed_query = """

@@ -390,14 +390,7 @@ def create_request():
     if not user_id:
         return jsonify({"error": "InvalidInput", "message": "User ID is required."  }), 400
     
-    required_fields = ["donor_count", "location", "hospital", "status", "gender"]
-
-    if "patient_tc_id" not in data:
-        required_fields.append("blood_type")
-        required_fields.append("age")
-        required_fields.append("patient_name")
-        required_fields.append("patient_surname")
-        
+    required_fields = ["donor_count", "location", "hospital", "status", "gender"]        
 
     for field in required_fields:
         if field not in data:
@@ -405,7 +398,7 @@ def create_request():
 
     requested_tc_id = ""
     patient_tc_id = data.get("patient_tc_id")
-    blood_type = data["blood_type"]
+    blood_type = data.get("blood_type")
     age = data.get("age")
     gender = data.get("gender")
     note = data.get("note")
@@ -484,7 +477,7 @@ def create_request():
             "timeout": "24 hours",
             "contact": "kanver400@gmail.com"
         }
-        notification_result = create_notification_logic(request_id, notification_type, message, common_params, connection)
+        notification_result = create_notification_logic(request_id, notification_type, message, common_params, connection, user_id)
 
         connection.commit()  
         

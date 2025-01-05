@@ -94,3 +94,11 @@ DO
     SET Status = 'closed'
     WHERE Status != 'closed'
       AND Create_Time <= NOW() - INTERVAL 7 DAY;
+
+CREATE EVENT IF NOT EXISTS UpdateEligibility
+ON SCHEDULE EVERY 1 DAY
+DO
+    UPDATE User
+    SET Is_Eligible = TRUE
+    WHERE Is_Eligible = FALSE
+      AND Last_Donation_Date <= NOW() - INTERVAL 90 DAY;
