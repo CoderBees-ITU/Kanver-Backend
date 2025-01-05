@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<testsuites>
+	<testsuite name="pytest" errors="0" failures="0" skipped="0" tests="46" time="9.893" timestamp="2025-01-05T19:16:29.660772+00:00" hostname="db5ecc34ccf9">
+		<testcase classname="tests.test_ban" name="test_ban_existing_user_success" time="0.244" />
+		<testcase classname="tests.test_ban" name="test_ban_non_existing_user" time="0.155" />
+		<testcase classname="tests.test_ban" name="test_ban_user_missing_fields[tc_id]" time="0.251" />
+		<testcase classname="tests.test_ban" name="test_ban_user_missing_fields[cause]" time="0.183" />
+		<testcase classname="tests.test_ban" name="test_ban_user_missing_fields[unban_date]" time="0.186" />
+		<testcase classname="tests.test_ban" name="test_unban_existing_user_success" time="0.241" />
+		<testcase classname="tests.test_ban" name="test_unban_non_banned_user" time="0.239" />
+		<testcase classname="tests.test_ban" name="test_get_banned_users_success" time="0.324" />
+		<testcase classname="tests.test_ban" name="test_get_banned_users_no_bans" time="0.234" />
+		<testcase classname="tests.test_login" name="test_login_with_registered_user" time="0.203" />
+		<testcase classname="tests.test_login" name="test_login_with_unregistered_user" time="0.159" />
+		<testcase classname="tests.test_login" name="test_login_with_invalid_token" time="0.185" />
+		<testcase classname="tests.test_on_the_way" name="test_add_on_the_way_valid" time="0.521" />
+		<testcase classname="tests.test_on_the_way" name="test_add_on_the_way_missing_request_id" time="0.001" />
+		<testcase classname="tests.test_on_the_way" name="test_add_on_the_way_missing_authorization" time="0.001" />
+		<testcase classname="tests.test_on_the_way" name="test_add_on_the_way_user_not_found" time="0.107" />
+		<testcase classname="tests.test_on_the_way" name="test_add_on_the_way_already_exists" time="0.251" />
+		<testcase classname="tests.test_on_the_way" name="test_add_on_the_way_not_eligible" time="0.253" />
+		<testcase classname="tests.test_on_the_way" name="test_add_on_the_way_request_closed" time="0.259" />
+		<testcase classname="tests.test_on_the_way" name="test_add_on_the_way_invalid_user" time="0.188" />
+		<testcase classname="tests.test_on_the_way" name="test_cancel_on_the_way" time="0.259" />
+		<testcase classname="tests.test_on_the_way" name="test_cancel_on_the_way_missing_auth" time="0.254" />
+		<testcase classname="tests.test_on_the_way" name="test_cancel_on_the_way_user_not_found" time="0.265" />
+		<testcase classname="tests.test_on_the_way" name="test_cancel_on_the_way_no_record" time="0.260" />
+		<testcase classname="tests.test_on_the_way" name="test_update_on_the_way_status_success" time="0.296" />
+		<testcase classname="tests.test_on_the_way" name="test_update_on_the_way_status_missing_status" time="0.234" />
+		<testcase classname="tests.test_register" name="test_user_creation_with_clean_table" time="0.136" />
+		<testcase classname="tests.test_register" name="test_user_already_exists" time="0.150" />
+		<testcase classname="tests.test_register" name="test_user_creation_with_missing_field" time="0.083" />
+		<testcase classname="tests.test_register" name="test_user_creation_with_false_field" time="0.083" />
+		<testcase classname="tests.test_register" name="test_user_creation_with_extra_field" time="0.139" />
+		<testcase classname="tests.test_requests" name="test_get_requests_all" time="0.249" />
+		<testcase classname="tests.test_requests" name="test_get_requests_filter_blood_type" time="0.250" />
+		<testcase classname="tests.test_requests" name="test_get_my_requests" time="0.248" />
+		<testcase classname="tests.test_requests" name="test_get_personalized_requests" time="0.249" />
+		<testcase classname="tests.test_requests" name="test_create_request_success_for_me" time="0.185" />
+		<testcase classname="tests.test_requests" name="test_create_request_success_for_someone_i_know" time="0.191" />
+		<testcase classname="tests.test_requests" name="test_delete_request_success" time="0.196" />
+		<testcase classname="tests.test_requests" name="test_delete_request_missing_request_id" time="0.159" />
+		<testcase classname="tests.test_requests" name="test_delete_request_unauthorized_user" time="0.189" />
+		<testcase classname="tests.test_system" name="test_usecase1_register_and_login" time="0.135" />
+		<testcase classname="tests.test_system" name="test_usecase2_login_and_see_active_requests" time="0.250" />
+		<testcase classname="tests.test_system" name="test_usecase3_create_request_for_someone_i_know" time="0.192" />
+		<testcase classname="tests.test_system" name="test_usecase4_and_5_sees_the_requests_details_and_decides_to_donate" time="0.411" />
+		<testcase classname="tests.test_system" name="test_usecase6_ineligble_donor_cant_donate" time="0.216" />
+		<testcase classname="tests.test_system" name="test_usecase7_approve_on_the_ways" time="0.111" />
+	</testsuite>
+</testsuites>
