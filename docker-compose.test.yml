@@ -1,5 +1,5 @@
 services:
-  backend:
+  backend-test:
     tty: true
     build:
       context: .
@@ -21,12 +21,12 @@ services:
       - DOCKER_MYSQL_PASSWORD=kanver_password
       - DOCKER_MYSQL_DB=kanver
     depends_on:
-      database:
+      database-test:
         condition: service_healthy
     expose:
       - "8080"
     command: pytest --disable-warnings --junitxml=test-results.xml
-  database:
+  database-test:
     image: mysql:8.0
     container_name: database-test-service
     environment:

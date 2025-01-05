@@ -13,7 +13,7 @@ payload = {
         "name": "Test",
         "surname": "User",
         "tc": "12345678901",
-        "blood_type": "O+",
+        "blood_type": "0+",
         "birth_date" : "1992-03-15"
 }
 

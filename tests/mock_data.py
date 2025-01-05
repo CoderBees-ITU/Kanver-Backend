@@ -25,19 +25,47 @@ users = [
         "Last_Donation_Date": "2022-12-15",
         "Is_Eligible": True
     },
+    {
+        "User_id": "121212",
+        "TC_ID": 12345678903,
+        "City": "Los Angeles",
+        "District": "Hollywood",
+        "Birth_Date": "1995-05-05",
+        "Name": "Bobby",
+        "Surname": "Williamson",
+        "Email": "bobby@example.com",
+        "Blood_Type": "A-",
+        "Last_Donation_Date": "2024-12-15",
+        "Is_Eligible": False
+    },
+    {
+        "User_id": "121212123123",
+        "TC_ID": 12345678904,
+        "City": "Los Angeles",
+        "District": "Hollywood",
+        "Birth_Date": "1995-05-05",
+        "Name": "Bubba",
+        "Surname": "Williamson",
+        "Email": "Bubba@example.com",
+        "Blood_Type": "A-",
+        "Last_Donation_Date": "2023-01-01",
+        "Is_Eligible": True
+    },
 ]
 requests = [
     {
         "Request_ID": 1,
         "Requested_TC_ID": users[0]["TC_ID"],
         "Patient_TC_ID": 98765432101,
-        "Blood_Type": "A+",
+        "Blood_Type": "A-",
         "Age": 30,
         "Gender": "Female",
         "Patient_Name": "Clara",
         "Patient_Surname": "Williams",
         "Status": "pending",
-        "Donor_Count": 2
+        "Donor_Count": 2,
+        "City" : "Los Angeles",
+        "District": "Manhattan"
     },
     {
         "Request_ID": 2,
@@ -49,7 +77,9 @@ requests = [
         "Patient_Name": "David",
         "Patient_Surname": "Brown",
         "Status": "pending",
-        "Donor_Count": 3
+        "Donor_Count": 3,
+        "City" : "Los Angeles",
+        "District": "Manhattan"
     },
     {
         "Request_ID": 3,
@@ -61,7 +91,9 @@ requests = [
         "Patient_Name": "Daviddd",
         "Patient_Surname": "Brownnnn",
         "Status": "pending",
-        "Donor_Count": 7
+        "Donor_Count": 7,
+        "City" : "Los Angeles",
+        "District": "Manhattan"
     },
 ]
 ontheways = [

@@ -77,7 +77,7 @@ def test_get_personalized_requests(client, db_connection, truncate_table, insert
                 x["Requested_TC_ID"] != user["TC_ID"]            ,mock_data.requests)))  
     assert response_data[0]["Requested_TC_ID"] != user["TC_ID"]
 
-def test_create_request_success_for_me(client, db_connection, truncate_table, insert_mock_data):
+def test_create_request_success_for_me(client, db_connection, truncate_table, insert_mock_data, mock_firebase):
     truncate_table("User")
     truncate_table("Requests")
     insert_mock_data("User", mock_data.users)
@@ -110,7 +110,7 @@ def test_create_request_success_for_me(client, db_connection, truncate_table, in
     assert response_data["message"] == "Request created and notification sent successfully."
     assert "request_id" in response_data
     assert "notification_id" in response_data
-def test_create_request_success_for_someone_i_know(client, db_connection, truncate_table, insert_mock_data):
+def test_create_request_success_for_someone_i_know(client, db_connection, truncate_table, insert_mock_data, mock_firebase):
     truncate_table("User")
     truncate_table("Requests")
     insert_mock_data("User", mock_data.users)
@@ -165,7 +165,7 @@ def test_create_request_success_for_someone_i_know(client, db_connection, trunca
 #     assert response.status_code == 200
 #     assert response_data["message"] == "Request updated successfully."
 
-def test_delete_request_success(client, db_connection, truncate_table, insert_mock_data):
+def test_delete_request_success(client, db_connection, truncate_table, insert_mock_data, mock_firebase):
     truncate_table("User")
     truncate_table("Requests")
     insert_mock_data("User", mock_data.users)
@@ -179,7 +179,7 @@ def test_delete_request_success(client, db_connection, truncate_table, insert_mo
     # Assertions
     assert response.status_code == 200
     assert response_data["message"] == "Request deleted successfully."
-def test_delete_request_missing_request_id(client, db_connection, truncate_table, insert_mock_data):
+def test_delete_request_missing_request_id(client, db_connection, truncate_table, insert_mock_data, mock_firebase):
     truncate_table("User")
     truncate_table("Requests")
     insert_mock_data("User", mock_data.users)
@@ -195,7 +195,7 @@ def test_delete_request_missing_request_id(client, db_connection, truncate_table
     assert response_data["error"] == "InvalidInput"
     assert response_data["message"] == "Request ID is required."
     
-def test_delete_request_unauthorized_user(client, db_connection, truncate_table, insert_mock_data):
+def test_delete_request_unauthorized_user(client, db_connection, truncate_table, insert_mock_data, mock_firebase):
     truncate_table("User")
     truncate_table("Requests")
     insert_mock_data("User", mock_data.users)
