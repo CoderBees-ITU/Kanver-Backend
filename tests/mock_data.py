@@ -2,21 +2,29 @@ users = [
     {
         "User_id": "123123",
         "TC_ID": 12345678901,
+        "City": "New York",
+        "District": "Manhattan",
+        "Birth_Date": "1990-01-01",
         "Name": "Alice",
         "Surname": "Smith",
         "Email": "alice@example.com",
-        "Birth_Date": "1990-01-01",
+        "Blood_Type": "0+",
+        "Last_Donation_Date": "2023-01-01",
         "Is_Eligible": True
     },
     {
         "User_id": "1231234",
         "TC_ID": 12345678902,
+        "City": "Los Angeles",
+        "District": "Hollywood",
+        "Birth_Date": "1995-05-05",
         "Name": "Bob",
         "Surname": "Johnson",
         "Email": "bob@example.com",
-        "Birth_Date": "1995-05-05",
+        "Blood_Type": "A-",
+        "Last_Donation_Date": "2022-12-15",
         "Is_Eligible": True
-    }
+    },
 ]
 requests = [
     {
@@ -54,7 +62,7 @@ requests = [
         "Patient_Surname": "Brownnnn",
         "Status": "pending",
         "Donor_Count": 7
-    }
+    },
 ]
 ontheways = [
     {
