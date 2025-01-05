@@ -1,13 +1,16 @@
-from flask import Blueprint, request, jsonify, session
-from firebase_admin import auth, app_check
-import mysql.connector
-from database.connection import get_db
 import secrets
+
 import firebase_admin
 import flask
 import jwt
-from src.models import UserRegister
+import mysql.connector
+from firebase_admin import app_check, auth
+from flask import Blueprint, jsonify, request, session
 from flask_pydantic import validate
+
+from database.connection import get_db
+from src.models import UserRegister
+
 auth_bp = Blueprint('auth', __name__)
 
 

@@ -1,7 +1,9 @@
 # Firebase Related Fixtures
-import pytest
-from unittest.mock import MagicMock
 import logging
+from unittest.mock import MagicMock
+
+import pytest
+from firebase_admin import auth
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +17,7 @@ def delete_user(uid):
 def create_user(email, password, display_name):
     mock_user_record = MagicMock()
     mock_user_record.uid = "test_user_id"
+    mock_user_record.email = email
     return mock_user_record
 
 def create_custom_token(uid):
@@ -23,11 +26,14 @@ def create_custom_token(uid):
     else:
         raise ValueError("Invalid user uid is used for custom token")
 
-def verify_id_token(uid):
-    if uid == "test_user_id":
-        return "mock_token"
+def verify_id_token(token):
+    if token == "mock_token":
+        return {
+            "uid": "test_user_id",
+            "email": "test@example.com"   
+        }
     else:
-        raise ValueError("Invalid token")
+        raise auth.InvalidIdTokenError("Invalid token")
 
 # Define a pytest fixture to mock Firebase
 @pytest.fixture
@@ -43,9 +49,10 @@ def mock_firebase(monkeypatch):
     monkeypatch.setattr("firebase_admin.auth.create_custom_token", mock_create_custom_token)
     monkeypatch.setattr("firebase_admin.auth.verify_id_token", mock_verify_id_token)
 
+
 #  Database related fixtures
 import pytest
-import os 
+import os
 from database.helper import get_db_with_config
 from mysql.connector.cursor import MySQLCursorDict
 def get_configs():
@@ -77,7 +84,7 @@ def db_connection(db_config):
 @pytest.fixture
 def truncate_table(db_connection):
     """
-    Truncate the Users table in the database.
+    Truncate the table in the database.
     """
     def truncate_table_wrapper(table):
         cursor = db_connection.cursor()
@@ -87,3 +94,34 @@ def truncate_table(db_connection):
         db_connection.commit()
         cursor.close()
     return truncate_table_wrapper
+
+@pytest.fixture
+def insert_mock_data(db_connection):
+    """
+    Insert mock data and return the inserted data.
+    """
+    def insert_mock_data_wrapper(table, data):
+        """
+        Inserts the provided data into the specified table.
+        Args:
+            table (str): The name of the table to insert data into.
+            data (list[dict]): A list of dictionaries where each dictionary represents a row.
+        Returns:
+            list[dict]: The inserted data.
+        """
+        if not data:
+            raise ValueError("Data cannot be empty.")
+
+        # Extract column names from the first dictionary
+        columns = data[0].keys()
+
+        # Create SQL query dynamically
+        placeholders = ", ".join(["%s"] * len(columns))
+        query = f"INSERT INTO {table} ({', '.join(columns)}) VALUES ({placeholders})"
+
+        # Insert all rows
+        cursor = db_connection.cursor()
+        values = [tuple(row[col] for col in columns) for row in data]
+        cursor.executemany(query, values)
+        db_connection.commit()
+    return insert_mock_data_wrapper

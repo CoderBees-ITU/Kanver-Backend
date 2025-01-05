@@ -1,0 +1,21 @@
+services:
+  load-test:
+    tty: true
+    build:
+      context: .
+      dockerfile: Dockerfile.load-test
+    container_name: load-test-service
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    environment:
+      - DOCKER_MYSQL_PORT=3306
+      - DOCKER_MYSQL_HOST=database-service
+      - DOCKER_MYSQL_USER=kanver_user
+      - DOCKER_MYSQL_PASSWORD=kanver_password
+      - DOCKER_MYSQL_DB=kanver
+      - DOCKER_BACKEND_HOST=http://backend-service:8080
+    expose:
+      - 8080
+    command: locust -f tests/locust.py --users 100 --spawn-rate 10 --headless --run-time 10m
