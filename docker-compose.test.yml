@@ -50,9 +50,9 @@ services:
         "CMD-SHELL",
         "mysql -h localhost -ukanver_user -pkanver_password -e \"SELECT status FROM kanver.initialization_flag WHERE status='completed' LIMIT 1\""
       ]
-      interval: 1s
+      interval: 5s
       retries: 20
-      start_period: 1s
-      timeout: 1s
+      start_period: 10s
+      timeout: 2s
 volumes:
   mysql_data:
