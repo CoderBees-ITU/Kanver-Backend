@@ -109,18 +109,19 @@ def test_usecase7_approve_on_the_ways(client, db_connection, truncate_table, ins
     assert response.status_code == 200
 
     payload = {
-        'status' : 'completed'
+        'status' : 'completed',
+        'request_id' : mock_data.requests[0]['Request_ID']
     }
     headers = {"Authorization": mock_data.users[0]["User_id"]}
-    response = client.put(f"/on_the_way/{response_data[0]['Request_ID']}", json=payload, headers=headers)
-    response_data = response.get_json()
-    logger.info(response_data)
+    response = client.put(f"/on_the_way/{response_data[0]['ID']}", json=payload, headers=headers)
+    on_the_way_response_data = response.get_json()
+    logger.info(on_the_way_response_data)
 
     assert response.status_code == 200
     headers = {"Authorization": mock_data.users[0]["User_id"]}
-    response = client.put(f"/on_the_way/{response_data[1]['Request_ID']}", json=payload, headers=headers)
-    response_data = response.get_json()
-    logger.info(response_data)
+    response = client.put(f"/on_the_way/{response_data[1]['ID']}", json=payload, headers=headers)
+    on_the_way_response_data = response.get_json()
+    logger.info(on_the_way_response_data)
     assert response.status_code == 200
     
     

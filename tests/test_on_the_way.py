@@ -56,7 +56,7 @@ def test_add_on_the_way_already_exists(client, db_connection, insert_mock_data,t
     insert_mock_data("On_The_Way", mock_data.ontheways)
 
     payload = {"request_id": mock_data.ontheways[0]["Request_ID"]}
-    headers = {"Authorization": mock_data.users[0]["User_id"]}
+    headers = {"Authorization": mock_data.users[1]["User_id"]}
     response = client.post("/on_the_way", json=payload, headers=headers)
     response_data = response.get_json()
 
@@ -127,7 +127,7 @@ def test_cancel_on_the_way(client, db_connection, truncate_table,insert_mock_dat
     insert_mock_data("On_The_Way", mock_data.ontheways)
 
 
-    headers = {"Authorization": mock_data.users[0]["User_id"]}
+    headers = {"Authorization": mock_data.users[1]["User_id"]}
     response = client.delete(f"/on_the_way/{mock_data.ontheways[0]['Request_ID']}", headers=headers)
     response_data = response.get_json()
 
@@ -199,10 +199,10 @@ def test_update_on_the_way_status_success(client, db_connection, truncate_table,
 
     # Make DELETE request
     headers = {"Authorization": mock_data.users[0]["User_id"]}
-    payload = {"status": "Donated"}
-    response = client.put(f"/on_the_way/{mock_data.ontheways[0]['Request_ID']}", json=payload, headers=headers)
+    payload = {"status": "completed", "request_id" : mock_data.requests[0]["Request_ID"]}
+    response = client.put(f"/on_the_way/1", json=payload, headers=headers)
     response_data = response.get_json()
-
+    logger.info(response_data)
     # Assertions
     assert response.status_code == 200
     assert response_data["message"] == "Status updated successfully."
@@ -224,4 +224,4 @@ def test_update_on_the_way_status_missing_status(client, db_connection, truncate
     # Assertions
     assert response.status_code == 400
     assert response_data["error"] == "InvalidInput"
-    assert "Status is required." in response_data["message"]
+    assert "Both 'status' and 'request_id' fields are required in JSON." in response_data["message"]
