@@ -354,6 +354,12 @@ def get_personalized_requests():
         cursor.execute(select_personalized_requests_query, filters)
         
         results = cursor.fetchall()
+
+        # Filter out results where status is not 'pending'
+        results = [result for result in results if result['Status'] == 'pending']
+
+
+
         
         # Format the Create_Time column
         for row in results:
