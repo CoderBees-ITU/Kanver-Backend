@@ -36,7 +36,6 @@ def send_email(common_params, recipients,templa_id):
         message_versions.append({
             "to": [{"email": recipient["email"], "name": recipient["name"]}],
             "params": {**common_params, "receiverName": recipient["name"]},
-            "subject": "Acil Kan İhtiyacı" 
         })
 
     payload = {
@@ -170,7 +169,7 @@ def create_notification_logic_on_the_way(on_the_way_id, notification_type, messa
             "blood": result["Blood_Type"],
             "locations": f"{district}/{city}, {hospital}",
             "donorName": result["DonorName"],
-            "contact": "+90 552 248 13 95"
+            "contact": "kanver400@gmail.com"
             
         }
 
@@ -202,71 +201,6 @@ def create_notification_logic_on_the_way(on_the_way_id, notification_type, messa
 
     finally:
         cursor.close()
-
-
-@notification_bp.route("/create", methods=["POST"])
-def create_notification():
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "InvalidInput", "message": "No input data provided"}), 400
-
-    # Gerekli alanlar
-    required_fields = ["request_id", "notification_type", "message", "common_params"]
-    for field in required_fields:
-        if field not in data:
-            return jsonify({"error": "InvalidInput", "message": f"Missing field: {field}"}), 400
-
-    request_id = data["request_id"]
-    notification_type = data["notification_type"]
-    message = data["message"]
-    common_params = data["common_params"]
-
-    try:
-        connection = get_db()
-        cursor = connection.cursor(dictionary=True)
-
-        # Kan grubu eşleşen alıcıları sorgula
-        query = """
-            SELECT 
-            CONCAT(Name, ' ', Surname) AS fullName, Email
-            FROM 
-            User left join Banned_Users on
-            User.TC_ID = Banned_Users.TC_ID
-            where
-            Banned_Users.TC_ID is null and
-            Blood_Type = %s and is_Eligible=True;
-        """
-        cursor.execute(query, (common_params["blood"],))
-        tmp_recipients = cursor.fetchall()
-
-        # Alıcı listesi oluştur
-        recipients = [{"email": recipient["Email"], "name": recipient["fullName"]} for recipient in tmp_recipients]
-
-        # Bildirimi Notifications tablosuna ekle
-        insert_query = """
-            INSERT INTO Notifications (Request_ID, Notification_Type, Message, Total_Mail_Sent)
-            VALUES (%s, %s, %s,%s)
-        """
-        cursor.execute(insert_query, (request_id, notification_type, message,len(tmp_recipients)))
-        connection.commit()
-
-        notification_id = cursor.lastrowid
-
-        # E-postayı gönder
-        send_email(common_params, recipients)
-
-        return jsonify({
-            "message": "Notification created and email sent successfully.",
-            "notification_id": notification_id
-        }), 201
-
-    except Exception as e:
-        return jsonify({"error": "DatabaseError", "message": f"Database error: {str(e)}"}), 500
-
-    finally:
-        cursor.close()
-        connection.close()
-
 
 @notification_bp.route("/notifications", methods=["get"])
 def get_notifications():
