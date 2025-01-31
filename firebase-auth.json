@@ -1,13 +1,13 @@
 {
   "type": "service_account",
-  "project_id": "test-kanver",
-  "private_key_id": "9384d24470907702dd84a41cd4548683843239bf",
-  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC5nGKIEcwg/PBX\n+sYyjqjixo3VarmhJBQ0mPRKHIsIKPYAk2OuvvoaButQ9iLug7g9RbRgsFGBaDSz\nQ3Di9U54bbrOi0fc3sO2rw1JhAuIio7FTPSsNAp5JT77wwUY3c8s20+ODstKV1uH\nT3NhfK7ljIR5NoU0nkWjYnodVWlr1ZqaqvP+fj96DY0lKFTaRcCIexm8IN/x1Wyw\n3MqW3Es5QTcb5oD6uKHy86N8t489CB7CzfDxUkbMY/H0zO2tpVCkbJ83FNygFsyU\nkxx8lP/1e4da/fxac0z2nLFXNBHO72VvHRbpdTEhiSCXK4NPYF6vfOiYHaLt1obs\ndo1u2Gx/AgMBAAECggEAHm8wENOqPvZ6ilKKURvnQVgBRa88RNnfnkg+NjC781iU\nDcAdJjgWVlIwH5RcYfOjMBjP3NLMaoWlrocuaWiDt2d2rAtWezbjrH7DlPxbz8W4\nZ02ZCOt3lCmxTCLMISmtoNNNFiQC3Wu5jFRQvPluzCDgT+fKq7gP/xxUnZ61rIKQ\nW/o717QNf6XbRIfEuLADZy08S0tViL0Ibap+0LNbPPtzLVVPdNnRVBzdu/aE4Jg7\nFNMo6ZoN9sKVOQqTlkD+0seEX3vzIXao4v6YLM3YQkx1awwJPaHVB+At8k1lziqP\nGUQg2x11vSCOu1BdFE4xnUCvtKHFyNtN6wFb1k1LoQKBgQDcJkjCX9SGBzWLXFl8\nxqc2kMrvEWho2RTFDYVCAMyMDqxcqqeNL8GPj/53Dvt0Xw5ciYh7dGC5TX0wLSzB\ndPMOGmuFiPPyFE/QIFP5kPR0dTW8ZySCogFKesERyBWevV0qNOD/5+V0exMW7Ix8\nf9JhqCijLG8Pt7pO2mloUBzZVwKBgQDX1jvLtQ8V75htBog0EcqPtE1QiFRLWzRn\n60/+ewrXOCTh2z7u+g5p9fzM7VLiJGrIJ35m17utBIjM16/hfkrwQquxHy8ZlhLg\nlvHsMJ4W9Ngqu2cGF6nVp/8fnnn5ZF7jCiGMYBU4OqHHofijgFZXF5G2EjdCrN1n\nU94A3quFGQKBgCRzRkrAmSyT1v67DKoHLjpvoNoSdMofXzv9MBosjbGG4Gz7aICM\n7qx5d/V4ipPLBVK3Bt0B+N3VgavPXwCs/21PXIwgj9t+F3TrVVwV7xO1MG+AWGA0\nuKf/SSZLjaDZ06ogVTypxakSk6eRBPW8KDY5JHlX6w+cKQHTUe6OjShDAoGBALlH\n9A7b//ZBtqSo/dVNDIkuK0ydq1cBFUy8KPB5KYY1cRvdfPni+OqnOvukIwl0X6Iw\nnQal3TsacGEAKsC1DJmRchfbgDBDrzLTARxTY/Kq/sI4G6mUOLvrukunXGflbLsT\n4FbDyJN7aZOZDHs22WdsGS6mFoALKwjfau1uOOlJAoGAJ/OeEXjZ7CHzVS8xzFEu\nK8Zk9+VL5+L1TjqaGMpEpmN0lr6t8c3AkOJ5mzFtjDs/wtHLvtMY8Fu1xVIP5xx/\naKXnNo8k9JtrF+FvpVJbwzoUmYZxCc5sRirDbvKQuonsv9ScHwtUtmTONh4vvve6\n9n7w7IsSL4DqEs+KN5PlUxI=\n-----END PRIVATE KEY-----\n",
-  "client_email": "firebase-adminsdk-avqcm@test-kanver.iam.gserviceaccount.com",
-  "client_id": "101015583442680885794",
+  "project_id": "{PROJECT_ID}",
+  "private_key_id": "{PRIVATE_KEY_ID}",
+  "private_key": "-----BEGIN PRIVATE KEY-----\n{PRIVATE_KEY}\n-----END PRIVATE KEY-----\n",
+  "client_email": "{CLIENT_EMAIL}",
+  "client_id": "{CLIENT_ID}",
   "auth_uri": "https://accounts.google.com/o/oauth2/auth",
   "token_uri": "https://oauth2.googleapis.com/token",
   "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-avqcm%40test-kanver.iam.gserviceaccount.com",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/{CLIENT_EMAIL}",
   "universe_domain": "googleapis.com"
-  }
+}
