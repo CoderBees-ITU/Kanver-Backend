@@ -9,9 +9,9 @@ import requests
 
 notification_bp = Blueprint("notification", __name__)
 
-API_KEY = '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'
-SENDER_EMAIL = "kul3562@gmail.com"
-SENDER_NAME = "KANVER"
+API_KEY = 'Brevo API Key'
+SENDER_EMAIL = "SENDER_EMAIL"
+SENDER_NAME = "SENDER_NAME"
 
 def send_email(common_params, recipients,templa_id):
     """
